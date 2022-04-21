@@ -7,14 +7,53 @@ library(sf)
 library(shinyjs)
 library(rgdal) #to read in polygons
 
+spp <- readOGR("./data", layer = "allSpp_5", GDAL1_integer64_policy = TRUE)
+
+spp_proj <- spTransform(spp, "+proj=longlat +datum=WGS84")
+
+spp_list <- unique(spp_proj$Species)
+
 # Define UI for application that draws a histogram
 ui <- bootstrapPage(
     useShinyjs(),
-    fluidRow(leafletOutput("map")),
+    
+    fluidRow(column(width = 5, offset = 0,
+                    div(style = 'padding-left:10px',
+                        h3("EAC - Gros Morne National Park")))),
+    
+    fluidRow(column(width = 12, offset = 0,
+                    div(style = 'padding-left:10px',
+                        leafletOutput("map", height = 500)))),
+    
+    br(),
+
+    fluidRow(column(width = 10, offset = 0,
+                    div(style = 'padding-left:10px',
+                        id = "sppCheckRow", 
+                        h4("To display polygons where 5/+ participants have identified as areas of importance"), 
+                        checkboxGroupInput("sppCheck", "Please select all that apply: ", choices = spp_list)))),
+    
+    br(),
+    
+    fluidRow(column(width = 10, offset = 0,
+                    div(style = 'padding-left:10px',
+                        h4("To download user drawn polygon: "),
+                        "Please select your participant number and the species for the polygon you have drawn from the menus below: "))), 
+    
+    fluidRow(column(width = 4, offset = 0,
+                    div(style = 'padding-left:10px',
+                        id = "usrRow",
+                        numericInput("usr", "Participant Number: ", "1", min = 1, max = 30, step = 1))),
+             column(width = 5, offset = 1,
+                    id = "sppRow",
+                    selectInput("spp", "Species: ", choices = spp_list))),
+    
+    br(),
+    
     hidden(
         div(id = "downloaddiv",
             fluidRow(
-                downloadButton("downloadData", "Download Shape File")
+                downloadButton("downloadData", "Download Polygon")
             )
         )
     )
@@ -22,11 +61,15 @@ ui <- bootstrapPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
+  
+    spp_cfilter <- reactive({
+      spp_proj[spp_proj$Species %in% input$sppCheck, ]
+    })
     
     output$map <- renderLeaflet({
         leaflet() %>%
-            addTiles() %>%
-            setView(lng = -5.3, lat = 56.3, zoom = 6) %>%
+            addProviderTiles(provider = providers$CartoDB.Positron) %>% 
+            setView(lng = -57.80, lat = 49.60, zoom = 8.5) %>%
             addDrawToolbar(rectangleOptions = FALSE,
                            editOptions = editToolbarOptions(edit = FALSE,
                                                             remove = TRUE),
@@ -36,13 +79,23 @@ server <- function(input, output, session) {
                            markerOptions = FALSE)
     })
     
+    observe({
+      spp_csub <- spp_proj[spp_proj$Species %in% input$sppCheck, ]
+      leafletProxy("map", data = spp_cfilter()) %>% 
+        clearShapes() %>% 
+        addPolygons(weight = 1, color = "blue", popup = ~paste("No. of Surveyees: ", spp_csub$COUNT_))
+    })
+    
     observeEvent(input$map_draw_new_feature, {
         show("downloaddiv")
     })
 
     output$downloadData <- downloadHandler(
         filename = function() {
-            paste("shapefile", "zip", sep=".")
+          spp_sub <- spp_proj[spp_proj$Species == input$spp, ]
+          lyrName <- unique(spp_sub$Species)
+          usr <- paste0(input$usr)
+          paste("P", usr, "_", lyrName, ".zip", sep = "")
         },
         content = function(file) {
             temp_shp <- tempdir()
