@@ -5,6 +5,7 @@ library(leaflet.extras)
 library(tidyverse)
 library(sf)
 library(shinyjs)
+library(rgdal) #to read in polygons
 
 # Define UI for application that draws a histogram
 ui <- bootstrapPage(
