@@ -50,14 +50,6 @@ ui <- bootstrapPage(
     
     br(),
     
-    # hidden(
-    #     div(id = "downloaddiv",
-    #         fluidRow(
-    #             downloadButton("downloadData", "Download Polygon")
-    #         )
-    #     )
-    # )
-    
     fluidRow(column(width = 5, offset = 0,
                     div(style = 'padding-left:10px', 
                         id = "downloaddiv",
@@ -91,11 +83,7 @@ server <- function(input, output, session) {
         addPolygons(weight = 1, color = "blue", popup = ~paste("No. of Surveyees: ", spp_csub$COUNT_))
     })
     
-    observeEvent(input$map_draw_new_feature, {
-        show("downloaddiv")
-    })
-
-    output$downloadData <- downloadHandler(
+    output$dlshp <- downloadHandler(
         filename = function() {
           spp_sub <- spp_proj[spp_proj$Species == input$spp, ]
           lyrName <- unique(spp_sub$Species)
