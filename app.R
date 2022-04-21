@@ -50,13 +50,18 @@ ui <- bootstrapPage(
     
     br(),
     
-    hidden(
-        div(id = "downloaddiv",
-            fluidRow(
-                downloadButton("downloadData", "Download Polygon")
-            )
-        )
-    )
+    # hidden(
+    #     div(id = "downloaddiv",
+    #         fluidRow(
+    #             downloadButton("downloadData", "Download Polygon")
+    #         )
+    #     )
+    # )
+    
+    fluidRow(column(width = 5, offset = 0,
+                    div(style = 'padding-left:10px', 
+                        id = "downloaddiv",
+                        downloadButton("dlshp", "Download polygon"))))
 )
 
 # Define server logic required to draw a histogram
