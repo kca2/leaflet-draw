@@ -102,7 +102,7 @@ server <- function(input, output, session) {
           lyrName <- paste0(input$use)
           usr <- paste0(input$usr)
           zoneID <- paste0(input$zones)
-          paste("P", usr, "_", lyrName, "_", zoneID, ".zip", sep = "")
+          paste("P", usr, "_", lyrName, "_Z", zoneID, ".zip", sep = "")
         },
         content = function(file) {
             temp_shp <- tempdir()
