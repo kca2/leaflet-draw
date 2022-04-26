@@ -19,7 +19,7 @@ ui <- bootstrapPage(
     
     fluidRow(column(width = 5, offset = 0,
                     div(style = 'padding-left:10px',
-                        h3("EAC - Gros Morne National Park")))),
+                        h3("EAC - Gros Morne Region")))),
     
     fluidRow(column(width = 12, offset = 0,
                     div(style = 'padding-left:10px',
@@ -38,22 +38,30 @@ ui <- bootstrapPage(
     fluidRow(column(width = 10, offset = 0,
                     div(style = 'padding-left:10px',
                         h4("To download user drawn polygon: "),
-                        "Please select your participant number and the species for the polygon you have drawn from the menus below: "))), 
+                        "Please select from the following: "))), 
     
-    fluidRow(column(width = 4, offset = 0,
+    fluidRow(column(width = 3, offset = 0,
                     div(style = 'padding-left:10px',
                         id = "usrRow",
                         numericInput("usr", "Participant Number: ", "1", min = 1, max = 30, step = 1))),
-             column(width = 5, offset = 1,
-                    id = "sppRow",
-                    selectInput("spp", "Species: ", choices = spp_list))),
+             # column(width = 3, 
+             #        id = "sppRow",
+             #        selectInput("spp", "Species: ", choices = spp_list)),
+             column(width = 3,
+                    id = "usage",
+                    selectInput("use", "Usage: ", choices = c("Protection", "TCC", "RRD"))),
+             column(width = 2, 
+                    id = "zoneID",
+                    selectInput("zones", "Zone: ", choices = c(1,2,3)))),
     
-    br(),
+    
+    br(), 
     
     fluidRow(column(width = 5, offset = 0,
                     div(style = 'padding-left:10px', 
                         id = "downloaddiv",
-                        downloadButton("dlshp", "Download polygon"))))
+                        downloadButton("dlshp", "Download polygon")))),
+    br()
 )
 
 # Define server logic required to draw a histogram
@@ -84,11 +92,18 @@ server <- function(input, output, session) {
     })
     
     output$dlshp <- downloadHandler(
+        # filename = function() {
+        #   spp_sub <- spp_proj[spp_proj$Species == input$spp, ]
+        #   lyrName <- unique(spp_sub$Species)
+        #   usr <- paste0(input$usr)
+        #   zoneID <- paste0(input$zones)
+        #   paste("P", usr, "_", lyrName, "_", zoneID, ".zip", sep = "")
+        # },
         filename = function() {
-          spp_sub <- spp_proj[spp_proj$Species == input$spp, ]
-          lyrName <- unique(spp_sub$Species)
+          lyrName <- paste0(input$use)
           usr <- paste0(input$usr)
-          paste("P", usr, "_", lyrName, ".zip", sep = "")
+          zoneID <- paste0(input$zones)
+          paste("P", usr, "_", lyrName, "_", zoneID, ".zip", sep = "")
         },
         content = function(file) {
             temp_shp <- tempdir()
