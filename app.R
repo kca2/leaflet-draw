@@ -44,6 +44,7 @@ ui <- bootstrapPage(
                     div(style = 'padding-left:10px',
                         id = "usrRow",
                         numericInput("usr", "Participant Number: ", "1", min = 1, max = 30, step = 1))),
+<<<<<<< HEAD
              # column(width = 3, 
              #        id = "sppRow",
              #        selectInput("spp", "Species: ", choices = spp_list)),
@@ -53,6 +54,15 @@ ui <- bootstrapPage(
              column(width = 2, 
                     id = "zoneID",
                     selectInput("zones", "Zone: ", choices = c(1,2,3)))),
+=======
+             column(width = 3, 
+                    id = "sppRow",
+                    selectInput("spp", "Species: ", choices = spp_list)),
+             column(width = 2, 
+                    id = "zoneID",
+                    selectInput("zones", "Zone: ", choices = c(1,2,3)))),
+    
+>>>>>>> 19450ac790b9bddfed726d75dc161a98baf777f9
     
     
     br(), 
