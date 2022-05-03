@@ -17,21 +17,19 @@ spp_list <- unique(spp_proj$Species)
 ui <- bootstrapPage(
     useShinyjs(),
     
-    fluidRow(column(width = 5, offset = 0,
-                    div(style = 'padding-left:10px',
-                        h3("EAC - Gros Morne Region")))),
-    
     fluidRow(column(width = 12, offset = 0,
                     div(style = 'padding-left:10px',
-                        leafletOutput("map", height = 500)))),
-    
+                        h2("EAC Dashboard - Gros Morne Region")))),
     br(),
-
-    fluidRow(column(width = 10, offset = 0,
-                    div(style = 'padding-left:10px',
-                        id = "sppCheckRow", 
-                        h4("To display polygons where 5/+ participants have identified as areas of importance"), 
-                        checkboxGroupInput("sppCheck", "Please select all that apply: ", choices = spp_list)))),
+    
+    fluidRow(column(width = 4,
+                    div(id = "sideCol", style = 'padding-left:10px',
+                        h4("To display polygons where 5/+ participants have identified as areas of importance"),
+                        checkboxGroupInput("sppCheck", "Please select all that apply: ", choices = spp_list),
+                        br())),
+             column(width = 8,
+                    div(id = "mapCol", 
+                        leafletOutput("map", height = 500, width = 600)))),
     
     br(),
     
@@ -53,8 +51,6 @@ ui <- bootstrapPage(
              column(width = 2, 
                     id = "zoneID",
                     selectInput("zones", "Zone: ", choices = c(1,2,3)))),
-    
-    br(), 
     
     fluidRow(column(width = 5, offset = 0,
                     div(style = 'padding-left:10px', 
@@ -87,7 +83,8 @@ server <- function(input, output, session) {
       spp_csub <- spp_proj[spp_proj$Species %in% input$sppCheck, ]
       leafletProxy("map", data = spp_cfilter()) %>% 
         clearShapes() %>% 
-        addPolygons(weight = 1, color = "blue", popup = ~paste("No. of Surveyees: ", spp_csub$COUNT_))
+        addPolygons(weight = 1, color = "blue", popup = ~paste("No. of Surveyees: ", spp_csub$COUNT_, "<br/>", 
+                                                               "Species: ", spp_csub$Species))
     })
     
     output$dlshp <- downloadHandler(
