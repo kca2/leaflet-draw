@@ -1,11 +1,17 @@
-# load packages
+###############
+# load libraries
+###############
 library(shiny)
 library(leaflet)
 library(leaflet.extras)
 library(tidyverse)
-library(sf)
+library(sf) # reproject from UTM to WGS84
 library(shinyjs)
 library(rgdal) #to read in polygons
+
+###############
+# reproject data as needed & get names for each unique layer 
+###############
 
 spp <- readOGR("./data", layer = "allSpp_5", GDAL1_integer64_policy = TRUE)
 
@@ -13,20 +19,35 @@ spp_proj <- spTransform(spp, "+proj=longlat +datum=WGS84")
 
 spp_list <- unique(spp_proj$Species)
 
-# Define UI for application that draws a histogram
+rrd <- readOGR("./data", layer = "RRD", GDAL1_integer64_policy = TRUE)
+
+rrd_proj <- spTransform(rrd, "+proj=longlat +datum=WGS84")
+
+rrd_list <- unique(rrd_proj$Energy)
+
+###############
+# Define UI 
+# Empty SpatialPolygonsDataFrame warning when no options are selected 
+###############
 ui <- bootstrapPage(
     useShinyjs(),
     
     fluidRow(column(width = 12, offset = 0,
                     div(style = 'padding-left:10px',
-                        h2("EAC Dashboard - Gros Morne Region")))),
-    br(),
+                        h3("EAC Dashboard - Gros Morne Region")))),
     
     fluidRow(column(width = 4,
                     div(id = "sideCol", style = 'padding-left:10px',
-                        h4("To display polygons where 5/+ participants have identified as areas of importance"),
-                        checkboxGroupInput("sppCheck", "Please select all that apply: ", choices = spp_list),
-                        br())),
+                        helpText("MSA as identified by 5/+ participants"),
+                        checkboxGroupInput("sppCheck", "Please select all that apply: ", 
+                                           choices = spp_list, selected = "Capelin"),
+                        
+                        helpText("RRD polygons"),
+                        checkboxGroupInput("rrdCheck", "Please select all that apply: ", 
+                                           choices = rrd_list, selected = "Tidal")
+                        
+                        )),
+             
              column(width = 8,
                     div(id = "mapCol", 
                         leafletOutput("map", height = 500, width = 600)))),
@@ -35,7 +56,7 @@ ui <- bootstrapPage(
     
     fluidRow(column(width = 10, offset = 0,
                     div(style = 'padding-left:10px',
-                        h4("To download user drawn polygon: "),
+                        helpText("To download user drawn polygon: "),
                         "Please select from the following: "))), 
     
     fluidRow(column(width = 3, offset = 0,
@@ -59,12 +80,10 @@ ui <- bootstrapPage(
     br()
 )
 
-# Define server logic required to draw a histogram
+###############
+# Define server logic
+###############
 server <- function(input, output, session) {
-  
-    spp_cfilter <- reactive({
-      spp_proj[spp_proj$Species %in% input$sppCheck, ]
-    })
     
     output$map <- renderLeaflet({
         leaflet() %>%
@@ -79,13 +98,39 @@ server <- function(input, output, session) {
                            markerOptions = FALSE)
     })
     
+    # # Spp lyr
+    # spp_cfilter <- reactive({
+    #   spp_proj[spp_proj$Species %in% input$sppCheck, ]
+    # })
+    # 
+    # observe({
+    #   spp_csub <- spp_proj[spp_proj$Species %in% input$sppCheck, ]
+    #   leafletProxy("map", data = spp_cfilter()) %>%
+    #     #clearShapes() %>%
+    #     addPolygons(weight = 1, color = "blue", popup = ~paste("No. of Surveyees: ", spp_csub$COUNT_, "<br/>",
+    #                                                            "Species: ", spp_csub$Species))
+    # })
+    
+    # allow users to turn layers on/off 
     observe({
+      
       spp_csub <- spp_proj[spp_proj$Species %in% input$sppCheck, ]
-      leafletProxy("map", data = spp_cfilter()) %>% 
-        clearShapes() %>% 
-        addPolygons(weight = 1, color = "blue", popup = ~paste("No. of Surveyees: ", spp_csub$COUNT_, "<br/>", 
-                                                               "Species: ", spp_csub$Species))
+      rrd_csub <- rrd_proj[rrd_proj$Energy %in% input$rrdCheck, ]
+      
+      leafletProxy("map") %>%
+        
+        clearShapes() %>%
+        
+        addPolygons(data = spp_proj[spp_proj$Species %in% input$sppCheck, ], 
+                    weight = 1, color = "blue",
+                    popup = ~paste("Species: ", spp_csub$Species, "<br/>",
+                                   "No. of Participants: ", spp_csub$COUNT_)) %>% 
+        
+        addPolygons(data = rrd_proj[rrd_proj$Energy %in% input$rrdCheck, ], 
+                    weight = 1, color = "green",
+                    popup = ~paste("Energy: ", rrd_csub$Energy))
     })
+
     
     output$dlshp <- downloadHandler(
         # filename = function() {
