@@ -40,11 +40,11 @@ ui <- bootstrapPage(
                     div(id = "sideCol", style = 'padding-left:10px',
                         helpText("MSA as identified by 5/+ participants"),
                         checkboxGroupInput("sppCheck", "Please select all that apply: ", 
-                                           choices = spp_list, selected = "Capelin"),
+                                           choices = spp_list),
                         
                         helpText("RRD polygons"),
                         checkboxGroupInput("rrdCheck", "Please select all that apply: ", 
-                                           choices = rrd_list, selected = "Tidal")
+                                           choices = rrd_list)
                         
                         )),
              
