@@ -17,7 +17,9 @@ spp <- readOGR("./data", layer = "all_spp_kc", GDAL1_integer64_policy = TRUE)
 spp$Species <- gsub("[[:punct:]]", " ", spp$Species) # remove special characters
 spp$countCol <- ifelse(spp$COUNT_ == 500, "green",
                        ifelse(spp$COUNT_ <= 4, "grey", "blue")) # colour polygons based on # of participants
-spp$parts <- ifelse(spp$COUNT_ == 500, "REF", spp$COUNT_)
+spp$parts <- ifelse(spp$COUNT_ == 500, 
+                    "ICZM Atlas of Sig. Coastal & Marine Areas", 
+                    spp$COUNT_)
 
 spp_proj <- spTransform(spp, "+proj=longlat +datum=WGS84")
 
@@ -272,8 +274,8 @@ ui <- bootstrapPage(
                         
                         helpText("To download user drawn polygon: "),
                         numericInput("usr", "Participant No.: ", "1", min = 1, max = 30, step = 1),
-                        selectInput("use", "Question: ", choices = c("MSA 1A", "MSA 2A", "MSA 3A", "MSA 4A",
-                                                                     "TCC 1A", "TCC 2A", "NRRD")),
+                        selectInput("use", "Question: ", choices = c("MSA_1A", "MSA_2A", "MSA_3A", "MSA_4A",
+                                                                     "TCC_1A", "TCC_2A", "NRRD")),
                         selectInput("zones", "Importance: ", choices = c("High", "Med", "Low")),
                         downloadButton("dlshp", "Download polygon")
                         
@@ -559,7 +561,7 @@ server <- function(input, output, session) {
           lyrName <- paste0(input$use)
           usr <- paste0(input$usr)
           zoneID <- paste0(input$zones)
-          paste("P", usr, "_", lyrName, "_Z", zoneID, ".zip", sep = "")
+          paste("P", usr, "_", lyrName, "_", zoneID, ".zip", sep = "")
         },
         content = function(file) {
             temp_shp <- tempdir()
