@@ -37,10 +37,51 @@ fishSpp <- c("Porbeagle Shark", "Sunfish", "Swordfish")
 fish <- spp_proj[spp_proj$Species %in% fishSpp, ]
 
 #birds
-birdSpp <- c("Sea Duck", "Waterfowl Seabird")
+birdSpp <- c("Sea Duck", "Waterfowl Seabird", "Waterfowl Seabirds")
 bird <- spp_proj[spp_proj$Species %in% birdSpp, ]
+bird$Species <- ifelse(grepl("Waterfowl", bird$Species), "Waterfowl/Seabirds", bird$Species)
+birdList <- unique(bird$Species)
 
-#---AIS
+#nesting
+nestSpp <- c("Eider Duck Nesting", "Migratory Bird Nesting", "Nesting Birds", "Piping Plover Nesting",
+             "Waterfowl Spp Seabirds Nesting")
+nest <- spp_proj[spp_proj$Species %in% nestSpp, ]
+
+# shellfish
+sfishSpp <- c("Clams", "Mussels", "Scallop", "Soft Shell Clam")
+sfish <- spp_proj[spp_proj$Species %in% sfishSpp, ]
+
+# ais
+aisSpp <- c("Coffin Box", "Golden Star Tunicate", "Green Crab", "Rainbow Trout")
+ais <- spp_proj[spp_proj$Species %in% aisSpp, ]
+
+#sar
+sarSpp <- c("American Eel", "American Marten", "Atlantic Wolffish", "Northern Wolffish", "Banded Killfish", 
+            "Barrows Goldeneye", "Crowded Wormseed Mustard", "Goldeneye", "Griscombs Armica", "Harlequin Duck",
+            "Ivory Gull", "Leatherback Turtle", "Mountain Fern", "Peregrine Falcon", "Piping Plover", "Red Knot",
+            "Rusty Blackbird", "Short Eared Owl", "Woodland Caribou", "Wooly Arnica")
+sar <- spp_proj[spp_proj$Species %in% sarSpp, ]
+
+# marine mammals
+mmSpp <- c("Bay Seals", "Seals", "Whale Dolphin")
+mm <- spp_proj[spp_proj$Species %in% mmSpp, ]
+mm$Species <- ifelse(mm$Species == "Whale Dolphin", "Whale/Dolphin", mm$Species)
+mmList <- unique(mm$Species)
+
+# significant marine habitats 
+habsSpp <- c("Ecological Reserve", "Eelgrass", "Saltmarsh Goose Staging Area", "Nursing Area", "Saltmarsh")
+habs <- spp_proj[spp_proj$Species %in% habsSpp, ] # not those habs
+
+# spawning collapse & fisheries closures
+scfcSpp <- c("Lobster Closure", "No Herring Spawning", "Snow Crab Closure")
+scfc <- spp_proj[spp_proj$Species %in% scfcSpp, ]
+
+# geological importance
+geoSpp <- c("Artifact Fossil")
+geo <- spp_proj[spp_proj$Species %in% geoSpp, ]
+geo$Species <- "Artifact/Fossil"
+geoList <- unique(geo$Species)
+
 
 #---RRD
 rrd <- readOGR("./data", layer = "RRD", GDAL1_integer64_policy = TRUE)
@@ -99,8 +140,82 @@ ui <- bootstrapPage(
                         actionButton("birdButton", label = "Show/Hide Birds"),
                         shinyjs::hidden(
                           div(id = "birdDiv",
-                              checkboxGroupInput("birdCheck", NULL, choices = birdSpp))
+                              checkboxGroupInput("birdCheck", NULL, choices = birdList))
                         ),
+                        
+                        br(),
+                        br(),
+                        
+                        actionButton("nestButton", label = "Show/Hide Nesting Areas"),
+                        shinyjs::hidden(
+                          div(id = "nestDiv",
+                              checkboxGroupInput("nestCheck", NULL, choices = nestSpp))
+                        ), 
+                        
+                        br(),
+                        br(),
+                        
+                        actionButton("sfishButton", label = "Show/Hide Shellfish"),
+                        shinyjs::hidden(
+                          div(id = "sfishDiv",
+                              checkboxGroupInput("sfishCheck", NULL, choices = sfishSpp))
+                        ),
+                        
+                        br(),
+                        br(),
+                        
+                        actionButton("aisButton", label = "Show/Hide AIS"),
+                        shinyjs::hidden(
+                          div(id = "aisDiv",
+                              checkboxGroupInput("aisCheck", NULL, choices = aisSpp))
+                        ),
+                        
+                        br(),
+                        br(),
+                        
+                        actionButton("sarButton", label = "Show/Hide SAR"),
+                        shinyjs::hidden(
+                          div(id = "sarDiv",
+                              checkboxGroupInput("sarCheck", NULL, choices = sarSpp))
+                        ),
+                        
+                        br(),
+                        br(),
+                        
+                        actionButton("mmButton", label = "Show/Hide Marine Mammals"),
+                        shinyjs::hidden(
+                          div(id = "mmDiv",
+                              checkboxGroupInput("mmCheck", NULL, choices = mmList))
+                        ),
+                        
+                        br(),
+                        br(),
+                        
+                        actionButton("habsButton", label = "Show/Hide Sig. Marine Habitats"),
+                        shinyjs::hidden(
+                          div(id = "habsDiv",
+                              checkboxGroupInput("habsCheck", NULL, choices = habsSpp))
+                        ),
+                        
+                        br(),
+                        br(),
+                        
+                        actionButton("scfcButton", label = "Show/Hide Collapse/Closures"),
+                        shinyjs::hidden(
+                          div(id = "scfcDiv",
+                              checkboxGroupInput("scfcCheck", NULL, choices = scfcSpp))
+                        ),
+                        
+                        br(),
+                        br(),
+                        
+                        actionButton("geoButton", label = "Show/Hide Geological Importance"),
+                        shinyjs::hidden(
+                          div(id = "geoDiv",
+                              checkboxGroupInput("geoCheck", NULL, choices = geoList))
+                        ),
+                      
+                      
                         
                         
                         # div(id = "msaDiv",
@@ -111,9 +226,7 @@ ui <- bootstrapPage(
                         # checkboxGroupInput("sppCheck", NULL, #"Please select all that apply: ", 
                         #                    choices = spp_list),
                         
-                        helpText("AIS polygons"),
-                        checkboxGroupInput("aisCheck", NULL), 
-                        
+
                         helpText("RRD polygons"),
                         checkboxGroupInput("rrdCheck", NULL, #"Please select all that apply: ", 
                                            choices = rrd_list)
@@ -208,6 +321,38 @@ server <- function(input, output, session) {
       shinyjs::toggle(id = "birdDiv")
     })
     
+    observeEvent(input$nestButton, {
+      shinyjs::toggle(id = "nestDiv")
+    })
+    
+    observeEvent(input$sfishButton, {
+      shinyjs::toggle(id = "sfishDiv")
+    })
+    
+    observeEvent(input$aisButton, {
+      shinyjs::toggle(id = "aisDiv")
+    })
+    
+    observeEvent(input$sarButton, {
+      shinyjs::toggle(id = "sarDiv")
+    })
+    
+    observeEvent(input$mmButton, {
+      shinyjs::toggle(id = "mmDiv")
+    })
+    
+    observeEvent(input$habsButton, {
+      shinyjs::toggle(id = "habsDiv")
+    })
+    
+    observeEvent(input$scfcButton, {
+      shinyjs::toggle(id = "scfcDiv")
+    })
+    
+    observeEvent(input$geoButton, {
+      shinyjs::toggle(id = "geoDiv")
+    })
+    
     #---allow users to turn layers on/off 
     observe({
       
@@ -216,7 +361,14 @@ server <- function(input, output, session) {
       spawn_csub <- spawn[spawn$Species %in% input$spawnCheck, ]
       fish_csub <- fish[fish$Species %in% input$fishCheck, ]
       bird_csub <- bird[bird$Species %in% input$birdCheck, ]
-      
+      nest_csub <- nest[nest$Species %in% input$nestCheck, ]
+      sfish_csub <- sfish[sfish$Species %in% input$sfishCheck, ]
+      ais_csub <- ais[ais$Species %in% input$aisCheck, ]
+      sar_csub <- sar[sar$Species %in% input$sarCheck, ]
+      mm_csub <- mm[mm$Species %in% input$mmCheck, ]
+      habs_csub <- habs[habs$Species %in% input$habsCheck, ]
+      scfc_csub <- scfc[scfc$Species %in% input$scfcCheck, ]
+      geo_csub <- geo[geo$Species %in% input$geoCheck, ]
       
       
       rrd_csub <- rrd_proj[rrd_proj$Energy %in% input$rrdCheck, ]
@@ -231,29 +383,67 @@ server <- function(input, output, session) {
         #             popup = ~paste("Species: ", spp_csub$Species, "<br/>",
         #                            "No. of Participants: ", spp_csub$COUNT_)) %>% 
         
-        addPolygons(data = comFish[comFish$Species %in% input$comFishCheck, ],
-                    weight = 1, color = "grey", smoothFactor = 0.5,
+        addPolygons(data = comFish_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = comFish_csub$countCol,
                     popup = ~paste("Species: ", comFish_csub$Species, "<br/>",
                                    "No. of Participants: ", comFish_csub$COUNT_)) %>% 
         
-        addPolygons(data = spawn[spawn$Species %in% input$spawnCheck, ],
-                    weight = 1, color = "grey", smoothFactor = 0.5,
+        addPolygons(data = spawn_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = spawn_csub$countCol,
                     popup = ~paste("Species: ", spawn_csub$Species, "<br/>",
                                    "No. of Participants: ", spawn_csub$COUNT_)) %>%
         
-        addPolygons(data = fish[fish$Species %in% input$fishCheck, ],
-                    weight = 1, color = "grey", smoothFactor = 0.5,
+        addPolygons(data = fish_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = fish_csub$countCol,
                     popup = ~paste("Species: ", fish_csub$Species, "<br/>",
                                    "No. of Participants: ", fish_csub$COUNT_)) %>% 
         
-        addPolygons(data = bird[bird$Species %in% input$birdCheck, ],
-                    weight = 1, color = "grey", smoothFactor = 0.5,
+        addPolygons(data = bird_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = bird_csub$countCol,
                     popup = ~paste("Species: ", bird_csub$Species, "<br/>",
                                    "No. of Participants: ", bird_csub$COUNT_)) %>% 
+        
+        addPolygons(data = nest_csub, weight = 1, color = "grey", smoothFactor = 0.5,
+                    fillColor = nest_csub$countCol,
+                    popup = ~paste("Speices: ", nest_csub$Species, "<br/>",
+                                   "No. of Participants: ", nest_csub$COUNT_)) %>% 
+        
+        addPolygons(data = sfish_csub, weight = 1, color = "grey", smoothFactor = 0.5,
+                    fillColor = sfish_csub$countCol,
+                    popup = ~paste("Species: ", sfish_csub$Species, "<br/>",
+                                   "No. of Participants: ", sfish_csub$COUNT_)) %>% 
+        
+        addPolygons(data = ais_csub, weight = 1, color = "grey", smoothFactor = 0.5,
+                    fillColor = ais_csub$countCol,
+                    popup = ~paste("Species: ", ais_csub$Species, "<br/>",
+                                   "No. of Participants: ", ais_csub$COUNT_)) %>% 
+        
+        addPolygons(data = sar_csub, weight = 1, color = "grey", smoothFactor = 0.5,
+                    fillColor = sar_csub$countCol, 
+                    popup = ~paste("Species: ", sar_csub$Species, "<br/>",
+                                   "No. of Participants: ", sar_csub$COUNT_)) %>% 
+        
+        addPolygons(data = mm_csub, weight = 1, color = "grey", smoothFactor = 0.5,
+                    fillColor = mm_csub$countCol,
+                    popup = ~paste("Species: ", mm_csub$Species, "<br/>",
+                                   "No. of Participants: ", mm_csub$COUNT_)) %>% 
+        
+        addPolygons(data = habs_csub,
+                    weight = 1, color = "grey", smoothFactor = 0.5,
+                    fillColor = habs_csub$countCol,
+                    popup = ~paste("Habitat: ", habs_csub$Species, "<br/>",
+                                   "No. of Participants: ", habs_csub$COUNT_)) %>% 
+        
+        addPolygons(data = scfc_csub, weight = 1, color = "grey", smoothFactor = 0.5,
+                    fillColor = scfc_csub$countCol,
+                    popup = ~paste("Collapse/Closure: ", scfc_csub$Species, "<br/>",
+                                   "No. of Participants: ", scfc_csub$COUNT_)) %>% 
+        
+        addPolygons(data = geo_csub, weight = 1, color = "grey", smoothFactor = 0.5,
+                    fillColor = geo_csub$countCol,
+                    popup = ~paste("Feature: ", geo_csub$Species, "<br/>",
+                                   "No. of Participants: ", geo_csub$COUNT_)) %>% 
+      
         
         
         
