@@ -16,7 +16,7 @@ library(rgdal) #to read in polygons
 spp <- readOGR("./data", layer = "all_spp_kc", GDAL1_integer64_policy = TRUE)
 spp$Species <- gsub("[[:punct:]]", " ", spp$Species) # remove special characters
 spp$countCol <- ifelse(spp$COUNT_ == 500, "green",
-                       ifelse(spp$COUNT_ <= 4, "grey", "red")) # colour polygons based on # of participants
+                       ifelse(spp$COUNT_ <= 4, "grey", "blue")) # colour polygons based on # of participants
 spp$parts <- ifelse(spp$COUNT_ == 500, "REF", spp$COUNT_)
 
 spp_proj <- spTransform(spp, "+proj=longlat +datum=WGS84")
@@ -87,6 +87,50 @@ geo <- spp_proj[spp_proj$Species %in% geoSpp, ]
 geo$Species <- "Artifact/Fossil"
 geoList <- unique(geo$Species)
 
+#---MSA 1A
+# impt areas for commerical & rec fisheries
+imptList <- c("High", "Medium", "Low")
+zoneFxn <- function(new_col, old_col){
+  new_col <- ifelse(grepl("High", old_col), "High",
+                    ifelse(grepl("Med", old_col), "Medium", "Low"))
+}
+colCountFxn <- function(new_col, old_col){
+  new_col <- ifelse(old_col <= 4, "grey", "blue")
+}
+
+msa_1a <- readOGR("./data", layer = "all_MSA_1A", GDAL1_integer64_policy = TRUE)
+msa_1a$countCol <- colCountFxn(msa_1a$countCol, msa_1a$COUNT_)
+msa_1a$Zone <- zoneFxn(msa_1a$Zone, msa_1a$Colour)
+
+msa_1a_proj <- spTransform(msa_1a, "+proj=longlat +datum=WGS84")
+
+#---MSA 3A
+# impt areas for research
+msa_3a <- readOGR("./data", layer = "all_MSA_3A", GDAL1_integer64_policy = TRUE)
+msa_3a$countCol <- colCountFxn(msa_3a$countCol, msa_3a$COUNT_)
+msa_3a$Zone <- zoneFxn(msa_3a$Zone, msa_3a$Colour)
+
+msa_3a_proj <- spTransform(msa_3a, "+proj=longlat +datum=WGS84")
+
+#---MSA 4A 
+# THIS IS THE SAME AS TCC 10A???
+
+#---TCC 1A
+# areas of personal importance 
+tcc_1a <- readOGR("./data", layer = "all_TCC_1A", GDAL1_integer64_policy = TRUE)
+tcc_1a$countCol <- colCountFxn(tcc_1a$countCol, tcc_1a$COUNT_)
+tcc_1a$Zone <- zoneFxn(tcc_1a$Zone, tcc_1a$Colour)
+
+tcc_1a_proj <- spTransform(tcc_1a, "+proj=longlat +datum=WGS84")
+
+#---TCC 2A
+# viewsheds of personal importance
+tcc_2a <- readOGR("./data", layer = "all_TCC_2A", GDAL1_integer64_policy = TRUE)
+tcc_2a$countCol <- colCountFxn(tcc_2a$countCol, tcc_2a$COUNT_)
+tcc_2a$Zone <- zoneFxn(tcc_2a$Zone, tcc_2a$Colour)
+
+tcc_2a_proj <- spTransform(tcc_2a, "+proj=longlat +datum=WGS84")
+
 
 #---RRD
 rrd <- readOGR("./data", layer = "RRD", GDAL1_integer64_policy = TRUE)
@@ -109,7 +153,7 @@ ui <- bootstrapPage(
     fluidRow(column(width = 4,  
                     div(id = "sideCol", style = 'padding-left:10px',
                         
-                        helpText("MSA"),
+                        helpText("Circle & Identify"),
                         # actionButton("msaButton", label = "show/hide"),
                         # shinyjs::hidden(
                         #   div(id = "msaDiv",
@@ -121,17 +165,11 @@ ui <- bootstrapPage(
                               checkboxGroupInput("comFishCheck", NULL, choices = comFishSpp))
                         ),
                         
-                        br(),
-                        br(),
-                        
                         actionButton("spawnButton", label = "Show/Hide Spawning"),
                         shinyjs::hidden(
                           div(id = "spawnDiv",
                               checkboxGroupInput("spawnCheck", NULL, choices = spawnSpp))
                         ), 
-                        
-                        br(),
-                        br(), 
                         
                         actionButton("fishButton", label = "Show/Hide Non-commercial Fisheries"),
                         shinyjs::hidden(
@@ -139,17 +177,11 @@ ui <- bootstrapPage(
                               checkboxGroupInput("fishCheck", NULL, choices = fishSpp))
                         ),
                         
-                        br(),
-                        br(),
-                        
                         actionButton("birdButton", label = "Show/Hide Birds"),
                         shinyjs::hidden(
                           div(id = "birdDiv",
                               checkboxGroupInput("birdCheck", NULL, choices = birdList))
                         ),
-                        
-                        br(),
-                        br(),
                         
                         actionButton("bnestButton", label = "Show/Hide Nesting Areas"),
                         shinyjs::hidden(
@@ -157,16 +189,11 @@ ui <- bootstrapPage(
                               checkboxGroupInput("bnestCheck", NULL, choices = bnestList))
                         ), 
                         
-                        br(),
-                        br(),
-                        
                         actionButton("sfishButton", label = "Show/Hide Shellfish"),
                         shinyjs::hidden(
                           div(id = "sfishDiv",
                               checkboxGroupInput("sfishCheck", NULL, choices = sfishSpp))
                         ),
-                        
-                        br(),
                         br(),
                         
                         actionButton("aisButton", label = "Show/Hide AIS"),
@@ -175,17 +202,11 @@ ui <- bootstrapPage(
                               checkboxGroupInput("aisCheck", NULL, choices = aisSpp))
                         ),
                         
-                        br(),
-                        br(),
-                        
                         actionButton("sarButton", label = "Show/Hide SAR"),
                         shinyjs::hidden(
                           div(id = "sarDiv",
                               checkboxGroupInput("sarCheck", NULL, choices = sarSpp))
                         ),
-                        
-                        br(),
-                        br(),
                         
                         actionButton("mmButton", label = "Show/Hide Marine Mammals"),
                         shinyjs::hidden(
@@ -193,17 +214,11 @@ ui <- bootstrapPage(
                               checkboxGroupInput("mmCheck", NULL, choices = mmList))
                         ),
                         
-                        br(),
-                        br(),
-                        
                         actionButton("habsButton", label = "Show/Hide Sig. Marine Habitats"),
                         shinyjs::hidden(
                           div(id = "habsDiv",
                               checkboxGroupInput("habsCheck", NULL, choices = habsSpp))
                         ),
-                        
-                        br(),
-                        br(),
                         
                         actionButton("scfcButton", label = "Show/Hide Collapse/Closures"),
                         shinyjs::hidden(
@@ -211,17 +226,12 @@ ui <- bootstrapPage(
                               checkboxGroupInput("scfcCheck", NULL, choices = scfcSpp))
                         ),
                         
-                        br(),
-                        br(),
-                        
                         actionButton("geoButton", label = "Show/Hide Geological Importance"),
                         shinyjs::hidden(
                           div(id = "geoDiv",
                               checkboxGroupInput("geoCheck", NULL, choices = geoList))
                         ),
                       
-                      
-                        
                         
                         # div(id = "msaDiv",
                         #     helpText("MSA as identified by 5/+ participants"),
@@ -230,6 +240,35 @@ ui <- bootstrapPage(
                         # helpText("MSA as identified by 5/+ participants"),
                         # checkboxGroupInput("sppCheck", NULL, #"Please select all that apply: ", 
                         #                    choices = spp_list),
+                        
+                        
+                        helpText("MSA 1A - Important areas for commercial & recreational fishery"),
+                        actionButton("msa1aButton", label = "Show/Hide Importance"),
+                        shinyjs::hidden(
+                          div(id = "msa1aDiv",
+                              checkboxGroupInput("msa1aCheck", NULL, choices = imptList))
+                        ),
+                        
+                        helpText("MSA 3A - Important areas for research"),
+                        actionButton("msa3aButton", label = "Show/Hide Importance"),
+                        shinyjs::hidden(
+                          div(id = "msa3aDiv",
+                              checkboxGroupInput("msa3aCheck", NULL, choices = imptList))
+                        ),
+                        
+                        helpText("TCC 1A - Important areas to participants personally"),
+                        actionButton("tcc1aButton", label = "Show/Hide Importance"),
+                        shinyjs::hidden(
+                          div(id = "tcc1aDiv",
+                              checkboxGroupInput("tcc1aCheck", NULL, choices = imptList))
+                        ),
+                        
+                        helpText("TCC 2A - Viewsheds important to participants personally"),
+                        actionButton("tcc2aButton", label = "Show/Hide Importance"),
+                        shinyjs::hidden(
+                          div(id = "tcc2aDiv",
+                              checkboxGroupInput("tcc2aCheck", NULL, choices = imptList))
+                        ),
                         
 
                         helpText("RRD polygons"),
@@ -358,6 +397,22 @@ server <- function(input, output, session) {
       shinyjs::toggle(id = "geoDiv")
     })
     
+    observeEvent(input$msa1aButton, {
+      shinyjs::toggle(id = "msa1aDiv")
+    })
+    
+    observeEvent(input$msa3aButton, {
+      shinyjs::toggle(id = "msa3aDiv")
+    })
+    
+    observeEvent(input$tcc1aButton, {
+      shinyjs::toggle(id = "tcc1aDiv")
+    })
+    
+    observeEvent(input$tcc2aButton, {
+      shinyjs::toggle(id = "tcc2aDiv")
+    })
+    
     #---allow users to turn layers on/off 
     observe({
       
@@ -374,6 +429,11 @@ server <- function(input, output, session) {
       habs_csub <- habs[habs$Species %in% input$habsCheck, ]
       scfc_csub <- scfc[scfc$Species %in% input$scfcCheck, ]
       geo_csub <- geo[geo$Species %in% input$geoCheck, ]
+      
+      msa1a_csub <- msa_1a_proj[msa_1a_proj$Zone %in% input$msa1aCheck, ]
+      msa3a_csub <- msa_3a_proj[msa_3a_proj$Zone %in% input$msa3aCheck, ]
+      tcc1a_csub <- tcc_1a_proj[tcc_1a_proj$Zone %in% input$tcc1aCheck, ]
+      tcc2a_csub <- tcc_2a_proj[tcc_2a_proj$Zone %in% input$tcc2aCheck, ]
       
       
       rrd_csub <- rrd_proj[rrd_proj$Energy %in% input$rrdCheck, ]
@@ -447,6 +507,27 @@ server <- function(input, output, session) {
                     fillColor = geo_csub$countCol,
                     popup = ~paste("Feature: ", geo_csub$Species, "<br/>",
                                    "No. of Participants: ", geo_csub$parts)) %>% 
+        
+        
+        addPolygons(data = msa1a_csub, weight = 1, color = "grey", smoothFactor = 0.5,
+                    fillColor = msa1a_csub$countCol,
+                    popup = ~paste("MSA 1A <br/> Importance: ", msa1a_csub$Zone, "<br/>",
+                                   "No. of Participants: ", msa1a_csub$COUNT_)) %>% 
+        
+        addPolygons(data = msa3a_csub, weight = 1, color = "grey", smoothFactor = 0.5,
+                    fillColor = msa3a_csub$countCol,
+                    popup = ~paste("MSA 3A <br/> Importance: ", msa3a_csub$Zone, "<br/>",
+                                   "No. of Participants: ", msa3a_csub$COUNT_)) %>% 
+        
+        addPolygons(data = tcc1a_csub, weight = 1, color = "grey", smoothFactor = 0.5,
+                    fillColor = tcc1a_csub$countCol,
+                    popup = ~paste("TCC 1A <br/> Importance: ", tcc1a_csub$Zone, "<br/>",
+                                   "No. of Participants: ", tcc1a_csub$COUNT_)) %>% 
+        
+        addPolygons(data = tcc2a_csub, weight = 1, color = "grey", smoothFactor = 0.5,
+                    fillColor = tcc2a_csub$countCol,
+                    popup = ~paste("TCC 2A <br/> Importance: ", tcc2a_csub$Zone, "<br/>",
+                                   "No. of Participants: ", tcc2a_csub$COUNT_)) %>% 
       
         
         
