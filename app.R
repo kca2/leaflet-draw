@@ -17,6 +17,7 @@ spp <- readOGR("./data", layer = "all_spp_kc", GDAL1_integer64_policy = TRUE)
 spp$Species <- gsub("[[:punct:]]", " ", spp$Species) # remove special characters
 spp$countCol <- ifelse(spp$COUNT_ == 500, "green",
                        ifelse(spp$COUNT_ <= 4, "grey", "red")) # colour polygons based on # of participants
+spp$parts <- ifelse(spp$COUNT_ == 500, "REF", spp$COUNT_)
 
 spp_proj <- spTransform(spp, "+proj=longlat +datum=WGS84")
 
@@ -43,9 +44,13 @@ bird$Species <- ifelse(grepl("Waterfowl", bird$Species), "Waterfowl/Seabirds", b
 birdList <- unique(bird$Species)
 
 #nesting
-nestSpp <- c("Eider Duck Nesting", "Migratory Bird Nesting", "Nesting Birds", "Piping Plover Nesting",
-             "Waterfowl Spp Seabirds Nesting")
-nest <- spp_proj[spp_proj$Species %in% nestSpp, ]
+bnestSpp <- c("Eider Duck Nesting", "Migratory Bird Nesting", "Nesting Birds", "Piping Plover Nesting",
+             "Waterfowl Spp   Seabirds Nesting")
+bnest <- spp_proj[spp_proj$Species %in% bnestSpp, ]
+bnest$Species <- ifelse(grepl("Waterfowl", bnest$Species), "Waterfowl Species & Seabirds Nesting",
+                        bnest$Species)
+bnestList <- unique(bnest$Species)
+
 
 # shellfish
 sfishSpp <- c("Clams", "Mussels", "Scallop", "Soft Shell Clam")
@@ -146,10 +151,10 @@ ui <- bootstrapPage(
                         br(),
                         br(),
                         
-                        actionButton("nestButton", label = "Show/Hide Nesting Areas"),
+                        actionButton("bnestButton", label = "Show/Hide Nesting Areas"),
                         shinyjs::hidden(
-                          div(id = "nestDiv",
-                              checkboxGroupInput("nestCheck", NULL, choices = nestSpp))
+                          div(id = "bnestDiv",
+                              checkboxGroupInput("bnestCheck", NULL, choices = bnestList))
                         ), 
                         
                         br(),
@@ -321,8 +326,8 @@ server <- function(input, output, session) {
       shinyjs::toggle(id = "birdDiv")
     })
     
-    observeEvent(input$nestButton, {
-      shinyjs::toggle(id = "nestDiv")
+    observeEvent(input$bnestButton, {
+      shinyjs::toggle(id = "bnestDiv")
     })
     
     observeEvent(input$sfishButton, {
@@ -361,7 +366,7 @@ server <- function(input, output, session) {
       spawn_csub <- spawn[spawn$Species %in% input$spawnCheck, ]
       fish_csub <- fish[fish$Species %in% input$fishCheck, ]
       bird_csub <- bird[bird$Species %in% input$birdCheck, ]
-      nest_csub <- nest[nest$Species %in% input$nestCheck, ]
+      bnest_csub <- bnest[bnest$Species %in% input$bnestCheck, ]
       sfish_csub <- sfish[sfish$Species %in% input$sfishCheck, ]
       ais_csub <- ais[ais$Species %in% input$aisCheck, ]
       sar_csub <- sar[sar$Species %in% input$sarCheck, ]
@@ -386,63 +391,62 @@ server <- function(input, output, session) {
         addPolygons(data = comFish_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = comFish_csub$countCol,
                     popup = ~paste("Species: ", comFish_csub$Species, "<br/>",
-                                   "No. of Participants: ", comFish_csub$COUNT_)) %>% 
+                                   "No. of Participants: ", comFish_csub$parts)) %>% 
         
         addPolygons(data = spawn_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = spawn_csub$countCol,
                     popup = ~paste("Species: ", spawn_csub$Species, "<br/>",
-                                   "No. of Participants: ", spawn_csub$COUNT_)) %>%
+                                   "No. of Participants: ", spawn_csub$parts)) %>%
         
         addPolygons(data = fish_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = fish_csub$countCol,
                     popup = ~paste("Species: ", fish_csub$Species, "<br/>",
-                                   "No. of Participants: ", fish_csub$COUNT_)) %>% 
+                                   "No. of Participants: ", fish_csub$parts)) %>% 
         
         addPolygons(data = bird_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = bird_csub$countCol,
                     popup = ~paste("Species: ", bird_csub$Species, "<br/>",
-                                   "No. of Participants: ", bird_csub$COUNT_)) %>% 
+                                   "No. of Participants: ", bird_csub$parts)) %>% 
         
-        addPolygons(data = nest_csub, weight = 1, color = "grey", smoothFactor = 0.5,
-                    fillColor = nest_csub$countCol,
-                    popup = ~paste("Speices: ", nest_csub$Species, "<br/>",
-                                   "No. of Participants: ", nest_csub$COUNT_)) %>% 
+        addPolygons(data = bnest_csub, weight = 1, color = "grey", smoothFactor = 0.5,
+                    fillColor = bnest_csub$countCol,
+                    popup = ~paste("Speices: ", bnest_csub$Species, "<br/>",
+                                   "No. of Participants: ", bnest_csub$parts)) %>% 
         
         addPolygons(data = sfish_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = sfish_csub$countCol,
                     popup = ~paste("Species: ", sfish_csub$Species, "<br/>",
-                                   "No. of Participants: ", sfish_csub$COUNT_)) %>% 
+                                   "No. of Participants: ", sfish_csub$parts)) %>% 
         
         addPolygons(data = ais_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = ais_csub$countCol,
                     popup = ~paste("Species: ", ais_csub$Species, "<br/>",
-                                   "No. of Participants: ", ais_csub$COUNT_)) %>% 
+                                   "No. of Participants: ", ais_csub$parts)) %>% 
         
         addPolygons(data = sar_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = sar_csub$countCol, 
                     popup = ~paste("Species: ", sar_csub$Species, "<br/>",
-                                   "No. of Participants: ", sar_csub$COUNT_)) %>% 
+                                   "No. of Participants: ", sar_csub$parts)) %>% 
         
         addPolygons(data = mm_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = mm_csub$countCol,
                     popup = ~paste("Species: ", mm_csub$Species, "<br/>",
-                                   "No. of Participants: ", mm_csub$COUNT_)) %>% 
+                                   "No. of Participants: ", mm_csub$parts)) %>% 
         
-        addPolygons(data = habs_csub,
-                    weight = 1, color = "grey", smoothFactor = 0.5,
+        addPolygons(data = habs_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = habs_csub$countCol,
                     popup = ~paste("Habitat: ", habs_csub$Species, "<br/>",
-                                   "No. of Participants: ", habs_csub$COUNT_)) %>% 
+                                   "No. of Participants: ", habs_csub$parts)) %>% 
         
         addPolygons(data = scfc_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = scfc_csub$countCol,
                     popup = ~paste("Collapse/Closure: ", scfc_csub$Species, "<br/>",
-                                   "No. of Participants: ", scfc_csub$COUNT_)) %>% 
+                                   "No. of Participants: ", scfc_csub$parts)) %>% 
         
         addPolygons(data = geo_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = geo_csub$countCol,
                     popup = ~paste("Feature: ", geo_csub$Species, "<br/>",
-                                   "No. of Participants: ", geo_csub$COUNT_)) %>% 
+                                   "No. of Participants: ", geo_csub$parts)) %>% 
       
         
         
