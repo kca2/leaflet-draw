@@ -23,13 +23,13 @@ spp_proj <- spTransform(spp, "+proj=longlat +datum=WGS84")
 spp_list <- unique(spp_proj$Species)
 
 # commercial fisheries
-comFishSpp <- c("Arctic Char", "Atlantic Mackerel", "Capelin", "Cod", "Crab", "Groundfish", 
+comFishSpp <- c("Capelin", "Cod", "Crab", 
                  "Halibut", "Herring", "Lobster", "Mackerel", "Redfish", "Shrimp", "Smelt", 
                  "Snow Crab", "Squid", "Tuna", "Turbot")
 comFish <- spp_proj[spp_proj$Species %in% comFishSpp, ]
 
 # spawning
-spawnSpp <- c("Capelin Spawning", "Halibut Spawning", "Herring Spawning", "Mackerel Spawning")
+spawnSpp <- c("Capelin Spawning", "Herring Spawning", "Mackerel Spawning")
 spawn <- spp_proj[spp_proj$Species %in% spawnSpp, ]
 
 # regular fish
@@ -37,7 +37,7 @@ fishSpp <- c("Porbeagle Shark", "Sunfish", "Swordfish")
 fish <- spp_proj[spp_proj$Species %in% fishSpp, ]
 
 #birds
-birdSpp <- c("Sea Duck", "Waterfowl Seabird", "Waterfowl Seabirds")
+birdSpp <- c("Waterfowl Seabird", "Waterfowl Seabirds")
 bird <- spp_proj[spp_proj$Species %in% birdSpp, ]
 bird$Species <- ifelse(grepl("Waterfowl", bird$Species), "Waterfowl/Seabirds", bird$Species)
 birdList <- unique(bird$Species)
@@ -69,7 +69,7 @@ mm$Species <- ifelse(mm$Species == "Whale Dolphin", "Whale/Dolphin", mm$Species)
 mmList <- unique(mm$Species)
 
 # significant marine habitats 
-habsSpp <- c("Ecological Reserve", "Eelgrass", "Saltmarsh Goose Staging Area", "Nursing Area", "Saltmarsh")
+habsSpp <- c("Eelgrass", "Saltmarsh Goose Staging Area", "Saltmarsh")
 habs <- spp_proj[spp_proj$Species %in% habsSpp, ] # not those habs
 
 # spawning collapse & fisheries closures
