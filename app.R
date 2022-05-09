@@ -133,11 +133,11 @@ tcc_2a_proj <- spTransform(tcc_2a, "+proj=longlat +datum=WGS84")
 
 
 #---RRD
-rrd <- readOGR("./data", layer = "RRD", GDAL1_integer64_policy = TRUE)
-
-rrd_proj <- spTransform(rrd, "+proj=longlat +datum=WGS84")
-
-rrd_list <- unique(rrd_proj$Energy)
+# rrd <- readOGR("./data", layer = "RRD", GDAL1_integer64_policy = TRUE)
+# 
+# rrd_proj <- spTransform(rrd, "+proj=longlat +datum=WGS84")
+# 
+# rrd_list <- unique(rrd_proj$Energy)
 
 ###############
 # Define UI 
@@ -154,79 +154,78 @@ ui <- bootstrapPage(
                     div(id = "sideCol", style = 'padding-left:10px',
                         
                         helpText("Circle & Identify"),
-                        # actionButton("msaButton", label = "show/hide"),
+                        # actionButton("msaButton", label = ""),
                         # shinyjs::hidden(
                         #   div(id = "msaDiv",
                         #       checkboxGroupInput("sppCheck", NULL, choices = spp_list))
                         # ),
-                        actionButton("comFishButton", label = "Show/Hide Commercial Fisheries"),
+                        actionButton("comFishButton", label = "Commercial Fisheries"),
                         shinyjs::hidden(
                           div(id = "comFishDiv",
                               checkboxGroupInput("comFishCheck", NULL, choices = comFishSpp))
                         ),
                         
-                        actionButton("spawnButton", label = "Show/Hide Spawning"),
+                        actionButton("spawnButton", label = "Spawning"),
                         shinyjs::hidden(
                           div(id = "spawnDiv",
                               checkboxGroupInput("spawnCheck", NULL, choices = spawnSpp))
-                        ), 
+                        ),
                         
-                        actionButton("fishButton", label = "Show/Hide Non-commercial Fisheries"),
+                        actionButton("fishButton", label = "Non-commercial Fisheries"),
                         shinyjs::hidden(
                           div(id = "fishDiv",
                               checkboxGroupInput("fishCheck", NULL, choices = fishSpp))
-                        ),
+                        ), br(),
                         
-                        actionButton("birdButton", label = "Show/Hide Birds"),
+                        actionButton("birdButton", label = "Birds"),
                         shinyjs::hidden(
                           div(id = "birdDiv",
                               checkboxGroupInput("birdCheck", NULL, choices = birdList))
-                        ),
+                        ), 
                         
-                        actionButton("bnestButton", label = "Show/Hide Nesting Areas"),
+                        actionButton("bnestButton", label = "Nesting Areas"),
                         shinyjs::hidden(
                           div(id = "bnestDiv",
                               checkboxGroupInput("bnestCheck", NULL, choices = bnestList))
-                        ), 
+                        ), br(), 
                         
-                        actionButton("sfishButton", label = "Show/Hide Shellfish"),
+                        actionButton("sfishButton", label = "Shellfish"),
                         shinyjs::hidden(
                           div(id = "sfishDiv",
                               checkboxGroupInput("sfishCheck", NULL, choices = sfishSpp))
-                        ),
-                        br(),
+                        ), br(),
                         
-                        actionButton("aisButton", label = "Show/Hide AIS"),
+                        actionButton("aisButton", label = "AIS"),
                         shinyjs::hidden(
                           div(id = "aisDiv",
                               checkboxGroupInput("aisCheck", NULL, choices = aisSpp))
-                        ),
+                        ), 
                         
-                        actionButton("sarButton", label = "Show/Hide SAR"),
+                        actionButton("sarButton", label = "SAR"),
                         shinyjs::hidden(
                           div(id = "sarDiv",
                               checkboxGroupInput("sarCheck", NULL, choices = sarSpp))
-                        ),
+                        ), br(), 
                         
-                        actionButton("mmButton", label = "Show/Hide Marine Mammals"),
+                        actionButton("mmButton", label = "Marine Mammals"),
                         shinyjs::hidden(
                           div(id = "mmDiv",
                               checkboxGroupInput("mmCheck", NULL, choices = mmList))
-                        ),
+                        ), br(),
                         
-                        actionButton("habsButton", label = "Show/Hide Sig. Marine Habitats"),
+                        actionButton("habsButton", label = "Sig. Marine Habitats"),
                         shinyjs::hidden(
                           div(id = "habsDiv",
                               checkboxGroupInput("habsCheck", NULL, choices = habsSpp))
-                        ),
+                        ), br(), 
                         
-                        actionButton("scfcButton", label = "Show/Hide Collapse/Closures"),
+                        actionButton("scfcButton", label = "Collapse/Closures"),
                         shinyjs::hidden(
                           div(id = "scfcDiv",
                               checkboxGroupInput("scfcCheck", NULL, choices = scfcSpp))
-                        ),
+                        ), br(), 
                         
-                        actionButton("geoButton", label = "Show/Hide Geological Importance"),
+                        actionButton("geoButton", label = "Geologically Important"),
                         shinyjs::hidden(
                           div(id = "geoDiv",
                               checkboxGroupInput("geoCheck", NULL, choices = geoList))
@@ -243,75 +242,85 @@ ui <- bootstrapPage(
                         
                         
                         helpText("MSA 1A - Important areas for commercial & recreational fishery"),
-                        actionButton("msa1aButton", label = "Show/Hide Importance"),
+                        actionButton("msa1aButton", label = "Importance"),
                         shinyjs::hidden(
                           div(id = "msa1aDiv",
                               checkboxGroupInput("msa1aCheck", NULL, choices = imptList))
                         ),
                         
                         helpText("MSA 3A - Important areas for research"),
-                        actionButton("msa3aButton", label = "Show/Hide Importance"),
+                        actionButton("msa3aButton", label = "Importance"),
                         shinyjs::hidden(
                           div(id = "msa3aDiv",
                               checkboxGroupInput("msa3aCheck", NULL, choices = imptList))
                         ),
                         
-                        helpText("TCC 1A - Important areas to participants personally"),
-                        actionButton("tcc1aButton", label = "Show/Hide Importance"),
+                        helpText("TCC 1A - Socially important areas"),
+                        actionButton("tcc1aButton", label = " Importance"),
                         shinyjs::hidden(
                           div(id = "tcc1aDiv",
                               checkboxGroupInput("tcc1aCheck", NULL, choices = imptList))
                         ),
                         
-                        helpText("TCC 2A - Viewsheds important to participants personally"),
-                        actionButton("tcc2aButton", label = "Show/Hide Importance"),
+                        helpText("TCC 2A - Socially important viewsheds"),
+                        actionButton("tcc2aButton", label = "Importance"),
                         shinyjs::hidden(
                           div(id = "tcc2aDiv",
                               checkboxGroupInput("tcc2aCheck", NULL, choices = imptList))
                         ),
+                        br(), br(), 
+                        
+                        helpText("To download user drawn polygon: "),
+                        numericInput("usr", "Participant No.: ", "1", min = 1, max = 30, step = 1),
+                        selectInput("use", "Question: ", choices = c("MSA 1A", "MSA 2A", "MSA 3A", "MSA 4A",
+                                                                     "TCC 1A", "TCC 2A", "NRRD")),
+                        selectInput("zones", "Importance: ", choices = c("High", "Med", "Low")),
+                        downloadButton("dlshp", "Download polygon")
+                        
                         
 
-                        helpText("RRD polygons"),
-                        checkboxGroupInput("rrdCheck", NULL, #"Please select all that apply: ", 
-                                           choices = rrd_list)
+                        # helpText("RRD polygons"),
+                        # checkboxGroupInput("rrdCheck", NULL, #"Please select all that apply: ", 
+                        #                    choices = rrd_list)
                         
                         )),
              
              column(width = 8,
                     div(id = "mapCol", 
-                        leafletOutput("map", height = 500, width = 600)))),
+                        leafletOutput("map", height = 900, width = 700)))),
     
-    br(),
+    br()
     
-    fluidRow(column(width = 12, offset = 0, #style = "background-color: #A7AFB2",
-                    div(style = 'padding-left:10px',
-                        helpText("To download user drawn polygon: "),
-                        "Please select from the following: "))), 
-    br(), 
-    
-    fluidRow(column(width = 3, offset = 0,
-                    div(style = 'padding-left:10px',
-                        id = "usrRow",
-                        numericInput("usr", "Participant Number: ", "1", min = 1, max = 30, step = 1))),
-             # column(width = 3, 
-             #        id = "sppRow",
-             #        selectInput("spp", "Species: ", choices = spp_list)),
-             column(width = 3,
-                    id = "usage",
-                    selectInput("use", "Usage: ", choices = c("AIS", "MSA", "NRRD", "SS", "TCC"))),
-             column(width = 2, 
-                    id = "zoneID",
-                    selectInput("zones", "Zone: ", choices = c(1,2,3))),
-             column(width = 3, 
-                    div(style = 'padding-top:25px', 
-                    id = "downloaddiv",
-                    downloadButton("dlshp", "Download polygon")))),
+    # fluidRow(column(width = 12, offset = 0, #style = "background-color: #A7AFB2",
+    #                 div(style = 'padding-left:10px',
+    #                     helpText("To download user drawn polygon: "),
+    #                     "Please select from the following: "))), 
+    # br(), 
+    # 
+    # fluidRow(column(width = 2, offset = 0,
+    #                 div(style = 'padding-left:10px',
+    #                     id = "usrRow",
+    #                     numericInput("usr", "Participant Number: ", "1", min = 1, max = 30, step = 1))),
+    #          # column(width = 3, 
+    #          #        id = "sppRow",
+    #          #        selectInput("spp", "Species: ", choices = spp_list)),
+    #          column(width = 1,
+    #                 id = "usage",
+    #                 selectInput("use", "Question: ", choices = c("MSA 1A", "MSA 2A", "MSA 3A", "MSA 4A",
+    #                                                           "TCC 1A", "TCC 2A", "NNRD"))),
+    #          column(width = 1, 
+    #                 id = "zoneID",
+    #                 selectInput("zones", "Importance: ", choices = c("High", "Med", "Low"))),
+    #          column(width = 1, 
+    #                 div(style = 'padding-top:25px', 
+    #                 id = "downloaddiv",
+    #                 downloadButton("dlshp", "Download polygon"))))
     
     # fluidRow(column(width = 5, offset = 0,
     #                 div(style = 'padding-left:10px', 
     #                     id = "downloaddiv",
     #                     downloadButton("dlshp", "Download polygon")))),
-    br()
+    # br()
 )
 
 ###############
@@ -322,7 +331,7 @@ server <- function(input, output, session) {
     output$map <- renderLeaflet({
         leaflet() %>%
             addProviderTiles(provider = providers$CartoDB.Positron) %>% 
-            setView(lng = -57.80, lat = 49.60, zoom = 8.5) %>%
+            setView(lng = -57.80, lat = 49.60, zoom = 9.5) %>%
             addDrawToolbar(rectangleOptions = FALSE,
                            editOptions = editToolbarOptions(edit = FALSE,
                                                             remove = TRUE),
@@ -436,7 +445,7 @@ server <- function(input, output, session) {
       tcc2a_csub <- tcc_2a_proj[tcc_2a_proj$Zone %in% input$tcc2aCheck, ]
       
       
-      rrd_csub <- rrd_proj[rrd_proj$Energy %in% input$rrdCheck, ]
+      #rrd_csub <- rrd_proj[rrd_proj$Energy %in% input$rrdCheck, ]
       
       leafletProxy("map") %>%
         
@@ -527,14 +536,14 @@ server <- function(input, output, session) {
         addPolygons(data = tcc2a_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = tcc2a_csub$countCol,
                     popup = ~paste("TCC 2A <br/> Importance: ", tcc2a_csub$Zone, "<br/>",
-                                   "No. of Participants: ", tcc2a_csub$COUNT_)) %>% 
+                                   "No. of Participants: ", tcc2a_csub$COUNT_)) 
       
         
         
         
-        addPolygons(data = rrd_proj[rrd_proj$Energy %in% input$rrdCheck, ], 
-                    weight = 1, color = "green",
-                    popup = ~paste("Energy: ", rrd_csub$Energy))
+        # addPolygons(data = rrd_proj[rrd_proj$Energy %in% input$rrdCheck, ], 
+        #             weight = 1, color = "green",
+        #             popup = ~paste("Energy: ", rrd_csub$Energy))
     })
 
     
