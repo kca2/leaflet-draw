@@ -15,7 +15,7 @@ library(rgdal) #to read in polygons
 #---MSA
 spp <- readOGR("./data", layer = "all_spp_kc", GDAL1_integer64_policy = TRUE)
 spp$Species <- gsub("[[:punct:]]", " ", spp$Species) # remove special characters
-spp$countCol <- ifelse(spp$COUNT_ == 500, "green",
+spp$countCol <- ifelse(spp$COUNT_ == 500, "red",
                        ifelse(spp$COUNT_ <= 4, "grey", "blue")) # colour polygons based on # of participants
 spp$parts <- ifelse(spp$COUNT_ == 500, 
                     "ICZM Atlas of Sig. Coastal & Marine Areas", 
@@ -41,7 +41,7 @@ fish <- spp_proj[spp_proj$Species %in% fishSpp, ]
 
 # salmon
 salmon <- readOGR("./data", layer = "Salmonrivers_KC", GDAL1_integer64_policy = TRUE)
-salmon$countCol <- ifelse(is.na(salmon$MapFile), "Green", "Grey")
+salmon$countCol <- ifelse(is.na(salmon$MapFile), "red", "Grey")
 salmon$SPECIES <- as.character(salmon$SPECIES)
 salmon$SPECIES <- ifelse(salmon$SPECIES == "Salmon & Sea Trout", "Salmon", salmon$SPECIES)
 salmon$REF <- ifelse(is.na(salmon$MapFile), "ICZM Atlas of Sig. Coastal & Marine Areas",
@@ -98,7 +98,7 @@ geoList <- unique(geo$Species)
 
 # sewage outflow
 ss <- readOGR("./data", layer = "SS_KC", GDAL1_integer64_policy = TRUE)
-ss$countCol <- ifelse(ss$MapFile == "Atlas", "Green", "Grey")
+ss$countCol <- ifelse(ss$MapFile == "Atlas", "red", "Grey")
 ss$REF <- ifelse(ss$MapFile == "Atlas", "ICZM Atlas of Sig. Coastal & Marine Areas",
                  "Previous workshops")
 ss_proj <- spTransform(ss, "+proj=longlat +datum=WGS84")
@@ -353,7 +353,7 @@ server <- function(input, output, session) {
     
     output$map <- renderLeaflet({
         leaflet() %>%
-            addProviderTiles(provider = providers$CartoDB.Positron) %>% 
+            addProviderTiles(provider = providers$Esri.WorldTopoMap) %>% 
             setView(lng = -57.80, lat = 49.60, zoom = 9.5) %>%
             addDrawToolbar(rectangleOptions = FALSE,
                            editOptions = editToolbarOptions(edit = FALSE,
@@ -580,6 +580,7 @@ server <- function(input, output, session) {
         #             popup = ~paste("Energy: ", rrd_csub$Energy))
     })
     
+    # allow users to turn markers on/off
     observe({
       prox <- leafletProxy("map")
       prox %>% clearMarkers()
@@ -591,8 +592,10 @@ server <- function(input, output, session) {
       
       if(input$ssCheck){
         prox %>% 
-          addCircleMarkers(data = ss_proj, color = "grey", fillColor = ss_proj$countCol,
-                           radius = 5, popup = ~paste("Source: ", ss_proj$REF))
+          addCircleMarkers(data = ss_proj, radius = 5, 
+                           color = "grey", fillColor = ss_proj$countCol,
+                           popup = ~paste("Location: ", ss_proj$SiteName, "<br/>",
+                                          "Source: ", ss_proj$REF))
       }
     })
 
