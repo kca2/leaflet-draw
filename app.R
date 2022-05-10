@@ -315,7 +315,10 @@ ui <- bootstrapPage(
                         helpText("To download user drawn polygon: "),
                         numericInput("usr", "Participant No.: ", "1", min = 1, max = 30, step = 1),
                         selectInput("use", "Question: ", choices = c("MSA_1A", "MSA_2A", "MSA_3A", "MSA_4A",
-                                                                     "TCC_1A", "TCC_2A", "NRRD")),
+                                                                     "TCC_1A", "TCC_2A", "NRRD",
+                                                                     "1", "2", "3", "4", "5", "6", "7", "8", 
+                                                                     "9", "10", "11", "12", "13", "14", "15",
+                                                                     "16", "17", "18", "19", "20")),
                         selectInput("zones", "Importance: ", choices = c("High", "Med", "Low")),
                         downloadButton("dlshp", "Download polygon")
                         
