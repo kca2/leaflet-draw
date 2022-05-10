@@ -39,20 +39,27 @@ spawn <- spp_proj[spp_proj$Species %in% spawnSpp, ]
 fishSpp <- c("Porbeagle Shark", "Sunfish", "Swordfish")
 fish <- spp_proj[spp_proj$Species %in% fishSpp, ]
 
-#birds
-birdSpp <- c("Waterfowl Seabird", "Waterfowl Seabirds")
+# salmon
+salmon <- readOGR("./data", layer = "Salmonrivers_KC", GDAL1_integer64_policy = TRUE)
+salmon$countCol <- ifelse(is.na(salmon$MapFile), "Green", "Grey")
+salmon$SPECIES <- as.character(salmon$SPECIES)
+salmon$SPECIES <- ifelse(salmon$SPECIES == "Salmon & Sea Trout", "Salmon", salmon$SPECIES)
+salmon$REF <- ifelse(is.na(salmon$MapFile), "ICZM Atlas of Sig. Coastal & Marine Areas",
+                     "Previous workshops")
+sal_proj <- spTransform(salmon, "+proj=longlat +datum=WGS84")
+
+# birds & nesting
+birdSpp <- c("Waterfowl Seabird", "Waterfowl Seabirds",
+             "Eider Duck Nesting", "Migratory Bird Nesting", "Nesting Birds", "Piping Plover Nesting",
+             "Saltmarsh Goose Staging Area", "Waterfowl Spp   Seabirds Nesting")
 bird <- spp_proj[spp_proj$Species %in% birdSpp, ]
-bird$Species <- ifelse(grepl("Waterfowl", bird$Species), "Waterfowl/Seabirds", bird$Species)
+bird$Species <- ifelse(bird$Species == "Waterfowl Seabird" | bird$Species == "Waterfowl Seabirds",
+                       "Waterfowl/Seabirds", bird$Species)
+bird$Species <- ifelse(bird$Species == "Waterfowl Spp   Seabirds Nesting",
+                       "Waterfowl Spp & Seabirds Nesting", bird$Species)
+bird$Species <- ifelse(bird$Species == "Saltmarsh Goose Staging Area",
+                       "Goose Staging Area", bird$Species)
 birdList <- unique(bird$Species)
-
-#nesting
-bnestSpp <- c("Eider Duck Nesting", "Migratory Bird Nesting", "Nesting Birds", "Piping Plover Nesting",
-             "Waterfowl Spp   Seabirds Nesting")
-bnest <- spp_proj[spp_proj$Species %in% bnestSpp, ]
-bnest$Species <- ifelse(grepl("Waterfowl", bnest$Species), "Waterfowl Species & Seabirds Nesting",
-                        bnest$Species)
-bnestList <- unique(bnest$Species)
-
 
 # shellfish
 sfishSpp <- c("Clams", "Mussels", "Scallop", "Soft Shell Clam")
@@ -76,7 +83,7 @@ mm$Species <- ifelse(mm$Species == "Whale Dolphin", "Whale/Dolphin", mm$Species)
 mmList <- unique(mm$Species)
 
 # significant marine habitats 
-habsSpp <- c("Eelgrass", "Saltmarsh Goose Staging Area", "Saltmarsh")
+habsSpp <- c("Eelgrass", "Saltmarsh")
 habs <- spp_proj[spp_proj$Species %in% habsSpp, ] # not those habs
 
 # spawning collapse & fisheries closures
@@ -88,6 +95,13 @@ geoSpp <- c("Artifact Fossil")
 geo <- spp_proj[spp_proj$Species %in% geoSpp, ]
 geo$Species <- "Artifact/Fossil"
 geoList <- unique(geo$Species)
+
+# sewage outflow
+ss <- readOGR("./data", layer = "SS_KC", GDAL1_integer64_policy = TRUE)
+ss$countCol <- ifelse(ss$MapFile == "Atlas", "Green", "Grey")
+ss$REF <- ifelse(ss$MapFile == "Atlas", "ICZM Atlas of Sig. Coastal & Marine Areas",
+                 "Previous workshops")
+ss_proj <- spTransform(ss, "+proj=longlat +datum=WGS84")
 
 #---MSA 1A
 # impt areas for commerical & rec fisheries
@@ -177,19 +191,20 @@ ui <- bootstrapPage(
                         shinyjs::hidden(
                           div(id = "fishDiv",
                               checkboxGroupInput("fishCheck", NULL, choices = fishSpp))
-                        ), br(),
+                        ), 
                         
-                        actionButton("birdButton", label = "Birds"),
+                        actionButton("salButton", label = "Salmon Rivers"),
+                        shinyjs::hidden(
+                          div(id = "salDiv",
+                              checkboxInput("salCheck", "Salmon", FALSE))
+                        ),
+                        br(),
+                        
+                        actionButton("birdButton", label = "Bird & Nesting Areas"),
                         shinyjs::hidden(
                           div(id = "birdDiv",
                               checkboxGroupInput("birdCheck", NULL, choices = birdList))
                         ), 
-                        
-                        actionButton("bnestButton", label = "Nesting Areas"),
-                        shinyjs::hidden(
-                          div(id = "bnestDiv",
-                              checkboxGroupInput("bnestCheck", NULL, choices = bnestList))
-                        ), br(), 
                         
                         actionButton("sfishButton", label = "Shellfish"),
                         shinyjs::hidden(
@@ -232,6 +247,12 @@ ui <- bootstrapPage(
                           div(id = "geoDiv",
                               checkboxGroupInput("geoCheck", NULL, choices = geoList))
                         ),
+                        
+                        actionButton("ssButton", label = "Sewage Outflows"),
+                        shinyjs::hidden(
+                          div(id = "ssDiv",
+                              checkboxInput("ssCheck", "Sewage", FALSE))
+                        ), 
                       
                         
                         # div(id = "msaDiv",
@@ -372,12 +393,12 @@ server <- function(input, output, session) {
       shinyjs::toggle(id = "fishDiv")
     })
     
-    observeEvent(input$birdButton, {
-      shinyjs::toggle(id = "birdDiv")
+    observeEvent(input$salButton, {
+      shinyjs::toggle(id = "salDiv")
     })
     
-    observeEvent(input$bnestButton, {
-      shinyjs::toggle(id = "bnestDiv")
+    observeEvent(input$birdButton, {
+      shinyjs::toggle(id = "birdDiv")
     })
     
     observeEvent(input$sfishButton, {
@@ -408,6 +429,10 @@ server <- function(input, output, session) {
       shinyjs::toggle(id = "geoDiv")
     })
     
+    observeEvent(input$ssButton, {
+      shinyjs::toggle(id = "ssDiv")
+    })
+    
     observeEvent(input$msa1aButton, {
       shinyjs::toggle(id = "msa1aDiv")
     })
@@ -424,6 +449,8 @@ server <- function(input, output, session) {
       shinyjs::toggle(id = "tcc2aDiv")
     })
     
+
+    
     #---allow users to turn layers on/off 
     observe({
       
@@ -431,8 +458,8 @@ server <- function(input, output, session) {
       comFish_csub <- comFish[comFish$Species %in% input$comFishCheck, ]
       spawn_csub <- spawn[spawn$Species %in% input$spawnCheck, ]
       fish_csub <- fish[fish$Species %in% input$fishCheck, ]
+      
       bird_csub <- bird[bird$Species %in% input$birdCheck, ]
-      bnest_csub <- bnest[bnest$Species %in% input$bnestCheck, ]
       sfish_csub <- sfish[sfish$Species %in% input$sfishCheck, ]
       ais_csub <- ais[ais$Species %in% input$aisCheck, ]
       sar_csub <- sar[sar$Species %in% input$sarCheck, ]
@@ -474,15 +501,13 @@ server <- function(input, output, session) {
                     popup = ~paste("Species: ", fish_csub$Species, "<br/>",
                                    "No. of Participants: ", fish_csub$parts)) %>% 
         
+        # addCircleMarkers(data = sal_csub, color = "grey", fillColor = sal_csub$countCol,
+        #                  radius = 2) %>% 
+        
         addPolygons(data = bird_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = bird_csub$countCol,
                     popup = ~paste("Species: ", bird_csub$Species, "<br/>",
                                    "No. of Participants: ", bird_csub$parts)) %>% 
-        
-        addPolygons(data = bnest_csub, weight = 1, color = "grey", smoothFactor = 0.5,
-                    fillColor = bnest_csub$countCol,
-                    popup = ~paste("Speices: ", bnest_csub$Species, "<br/>",
-                                   "No. of Participants: ", bnest_csub$parts)) %>% 
         
         addPolygons(data = sfish_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = sfish_csub$countCol,
@@ -540,12 +565,35 @@ server <- function(input, output, session) {
                     popup = ~paste("TCC 2A <br/> Importance: ", tcc2a_csub$Zone, "<br/>",
                                    "No. of Participants: ", tcc2a_csub$COUNT_)) 
       
+        # else{
+        #   addCircleMarkers(data = NULL)
+        # }        
+        # addCircleMarkers(data = sal_proj[sal_proj$SPECIES %in% input$salCheck, ], weight = 1,
+        #                  color = "grey", fillColor = sal_proj$countCol)
+
+      
         
         
         
         # addPolygons(data = rrd_proj[rrd_proj$Energy %in% input$rrdCheck, ], 
         #             weight = 1, color = "green",
         #             popup = ~paste("Energy: ", rrd_csub$Energy))
+    })
+    
+    observe({
+      prox <- leafletProxy("map")
+      prox %>% clearMarkers()
+      if (input$salCheck){
+        prox %>% addCircleMarkers(data = sal_proj[sal_proj$SPECIES == "Salmon", ],
+                                  color = "grey", fillColor = sal_proj$countCol, radius = 5,
+                                  popup = ~paste("Source: ", sal_proj$REF))
+      }
+      
+      if(input$ssCheck){
+        prox %>% 
+          addCircleMarkers(data = ss_proj, color = "grey", fillColor = ss_proj$countCol,
+                           radius = 5, popup = ~paste("Source: ", ss_proj$REF))
+      }
     })
 
     
