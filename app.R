@@ -147,6 +147,17 @@ tcc_2a$Zone <- zoneFxn(tcc_2a$Zone, tcc_2a$Colour)
 
 tcc_2a_proj <- spTransform(tcc_2a, "+proj=longlat +datum=WGS84")
 
+#---TCC 10A
+# NMCA zones
+nmca <- readOGR("./data", layer = "all_TCC_10A", GDAL1_integer64_policy = TRUE)
+nmca$countCol <- colCountFxn(nmca$countCol, nmca$COUNT_)
+nmca$Zone <- zoneFxn(nmca$Zone, nmca$Colour)
+nmca$nmca_zone <- ifelse(nmca$Zone == "High", "Zone 1",
+                         ifelse(nmca$Zone == "Medium", "Zone 2", "Zone 3"))
+nmcaList <- c("Zone 1", "Zone 2", "Zone 3")
+
+nmca_proj <- spTransform(nmca, "+proj=longlat +datum=WGS84")
+
 
 #---RRD
 # rrd <- readOGR("./data", layer = "RRD", GDAL1_integer64_policy = TRUE)
@@ -278,6 +289,13 @@ ui <- bootstrapPage(
                               checkboxGroupInput("msa3aCheck", NULL, choices = imptList))
                         ),
                         
+                        helpText("MSA 4A - NMCA zones"),
+                        actionButton("nmcaButton", label = "Zones"),
+                        shinyjs::hidden(
+                          div(id = "nmcaDiv",
+                              checkboxGroupInput("nmcaCheck", NULL, choices = nmcaList))
+                        ),
+                        
                         helpText("TCC 1A - Socially important areas"),
                         actionButton("tcc1aButton", label = " Importance"),
                         shinyjs::hidden(
@@ -291,6 +309,7 @@ ui <- bootstrapPage(
                           div(id = "tcc2aDiv",
                               checkboxGroupInput("tcc2aCheck", NULL, choices = imptList))
                         ),
+                        
                         br(), br(), 
                         
                         helpText("To download user drawn polygon: "),
@@ -441,6 +460,10 @@ server <- function(input, output, session) {
       shinyjs::toggle(id = "msa3aDiv")
     })
     
+    observeEvent(input$nmcaButton, {
+      shinyjs::toggle(id = "nmcaDiv")
+    })
+    
     observeEvent(input$tcc1aButton, {
       shinyjs::toggle(id = "tcc1aDiv")
     })
@@ -470,6 +493,9 @@ server <- function(input, output, session) {
       
       msa1a_csub <- msa_1a_proj[msa_1a_proj$Zone %in% input$msa1aCheck, ]
       msa3a_csub <- msa_3a_proj[msa_3a_proj$Zone %in% input$msa3aCheck, ]
+      
+      nmca_csub <- nmca_proj[nmca_proj$nmca_zone %in% input$nmcaCheck, ]
+      
       tcc1a_csub <- tcc_1a_proj[tcc_1a_proj$Zone %in% input$tcc1aCheck, ]
       tcc2a_csub <- tcc_2a_proj[tcc_2a_proj$Zone %in% input$tcc2aCheck, ]
       
@@ -554,6 +580,11 @@ server <- function(input, output, session) {
                     fillColor = msa3a_csub$countCol,
                     popup = ~paste("MSA 3A <br/> Importance: ", msa3a_csub$Zone, "<br/>",
                                    "No. of Participants: ", msa3a_csub$COUNT_)) %>% 
+        
+        addPolygons(data = nmca_csub, weight = 1, color = "grey", smoothFactor = 0.5,
+                    fillColor = nmca_csub$countCol,
+                    popup = ~paste("MSA 4A <br/> NMCA Zone: ", nmca_csub$nmca_zone, "<br/>",
+                                   "No. of Participants: ", nmca_csub$COUNT_)) %>% 
         
         addPolygons(data = tcc1a_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = tcc1a_csub$countCol,
