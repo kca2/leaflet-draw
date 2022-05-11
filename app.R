@@ -152,6 +152,11 @@ rec$acts <- ifelse(rec$Map_No == "TCC_4A", "Kayaking/Canoeing/SUP",
                                  ifelse(rec$Map_No == "TCC_7A", "Bird Watching", "Hunting"))))
 actList <- unique(rec$acts)
 
+#--- buffer
+buff <- readOGR("./data", layer = "all_buffers", GDAL1_integer64_policy = TRUE)
+buff_proj <- spTransform(buff, "+proj=longlat +datum=WGS84")
+buffList <- unique(buff_proj$Buffer_Dis)
+
 
 #---RRD
 # rrd <- readOGR("./data", layer = "RRD", GDAL1_integer64_policy = TRUE)
@@ -165,9 +170,6 @@ actList <- unique(rec$acts)
 # Empty SpatialPolygonsDataFrame warning when no options are selected 
 ###############
 ui <- bootstrapPage(
-    tags$style(type = "text/css",
-               ".shiny-output-error {visibility: hidden; }",
-               ".shiny-output-error:before {visbility: hidden; }"),
     
     useShinyjs(),
     
@@ -314,6 +316,13 @@ ui <- bootstrapPage(
                         shinyjs::hidden(
                           div(id = "recDiv",
                               checkboxGroupInput("recCheck", NULL, choices = actList))
+                        ),
+                        
+                        helpText("Buffer"),
+                        actionButton("buffButton", label = "Distance from National Park Boundary"),
+                        shinyjs::hidden(
+                          div(id = "buffDiv",
+                              checkboxGroupInput("buffCheck", NULL, choices = buffList))
                         ),
                         br(), br(), 
                         
@@ -487,6 +496,10 @@ server <- function(input, output, session) {
       shinyjs::toggle(id = "recDiv")
     })
     
+    observeEvent(input$buffButton, {
+      shinyjs::toggle(id = "buffDiv")
+    })
+    
 
     
     #---allow users to turn layers on/off 
@@ -514,6 +527,8 @@ server <- function(input, output, session) {
       
       rec_csub <- rec[rec$acts %in% input$recCheck, ]
       
+      buff_csub <- buff_proj[buff_proj$Buffer_Dis %in% input$buffCheck, ]
+      
       #rrd_csub <- rrd_proj[rrd_proj$Energy %in% input$rrdCheck, ]
       
       leafletProxy("map") %>%
@@ -537,12 +552,9 @@ server <- function(input, output, session) {
                                    "No. of Participants: ", spawn_csub$parts)) %>%
         
         addPolygons(data = fish_csub, weight = 1, color = "grey", smoothFactor = 0.5,
-                    fillColor = fish_csub$countCol,
+                    fillColor = fish_csub$countCol, 
                     popup = ~paste("Species: ", fish_csub$Species, "<br/>",
                                    "No. of Participants: ", fish_csub$parts)) %>% 
-        
-        # addCircleMarkers(data = sal_csub, color = "grey", fillColor = sal_csub$countCol,
-        #                  radius = 2) %>% 
         
         addPolygons(data = bird_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = bird_csub$countCol,
@@ -613,22 +625,18 @@ server <- function(input, output, session) {
         addPolygons(data = rec_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = rec_csub$countCol,
                     popup = ~paste("Rec. Areas: ", rec_csub$acts, "<br/>",
-                                   "No. of Participants: ", rec_csub$COUNT_))
+                                   "No. of Participants: ", rec_csub$COUNT_)) %>% 
+        
+        addPolygons(data = buff_csub, weight = 1, color = "grey", smoothFactor = 0.5,
+                    popup = ~paste("Distance from National Park Boundary: ", 
+                                   buff_csub$Buffer_Dis, " km"))
       
       
-        # else{
-        #   addCircleMarkers(data = NULL)
-        # }        
-        # addCircleMarkers(data = sal_proj[sal_proj$SPECIES %in% input$salCheck, ], weight = 1,
-        #                  color = "grey", fillColor = sal_proj$countCol)
-
       
-        
-        
-        
         # addPolygons(data = rrd_proj[rrd_proj$Energy %in% input$rrdCheck, ], 
         #             weight = 1, color = "green",
         #             popup = ~paste("Energy: ", rrd_csub$Energy))
+      
     })
     
     # allow users to turn markers on/off
@@ -649,6 +657,9 @@ server <- function(input, output, session) {
                                           "Source: ", ss_proj$REF))
       }
     })
+    
+    # buffers
+    
 
     
     output$dlshp <- downloadHandler(
