@@ -377,6 +377,7 @@ server <- function(input, output, session) {
         leaflet() %>%
             addProviderTiles(provider = providers$Esri.WorldTopoMap) %>% 
             setView(lng = -57.80, lat = 49.60, zoom = 9.5) %>%
+            addScaleBar() %>% 
             addDrawToolbar(rectangleOptions = FALSE,
                            editOptions = editToolbarOptions(edit = FALSE,
                                                             remove = TRUE),
