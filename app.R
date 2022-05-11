@@ -303,7 +303,7 @@ ui <- bootstrapPage(
                               checkboxGroupInput("tcc2aCheck", NULL, choices = imptList))
                         ),
                         
-                        helpText("TCC 4A:8A - Recreation areas"),
+                        helpText("TCC 4A:8A - Important recreation areas"),
                         actionButton("recButton", label = "Activities"),
                         shinyjs::hidden(
                           div(id = "recDiv",
