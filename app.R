@@ -9,6 +9,8 @@ library(sf) # reproject from UTM to WGS84
 library(shinyjs)
 library(rgdal) #to read in polygons
 
+options(warn = 0) # suppress empty polygon warnings 
+
 ###############
 # reproject data as needed & get names for each unique layer 
 ###############
@@ -163,6 +165,10 @@ actList <- unique(rec$acts)
 # Empty SpatialPolygonsDataFrame warning when no options are selected 
 ###############
 ui <- bootstrapPage(
+    tags$style(type = "text/css",
+               ".shiny-output-error {visibility: hidden; }",
+               ".shiny-output-error:before {visbility: hidden; }"),
+    
     useShinyjs(),
     
     fluidRow(column(width = 12, offset = 0,
