@@ -12,7 +12,7 @@ library(rgdal) #to read in polygons
 ###############
 # reproject data as needed & get names for each unique layer 
 ###############
-#---MSA
+#--- circle & ID
 spp <- readOGR("./data", layer = "all_spp_kc", GDAL1_integer64_policy = TRUE)
 spp$Species <- gsub("[[:punct:]]", " ", spp$Species) # remove special characters
 spp$countCol <- ifelse(spp$COUNT_ == 500, "red",
@@ -103,8 +103,7 @@ ss$REF <- ifelse(ss$MapFile == "Atlas", "ICZM Atlas of Sig. Coastal & Marine Are
                  "Previous workshops")
 ss_proj <- spTransform(ss, "+proj=longlat +datum=WGS84")
 
-#---MSA 1A
-# impt areas for commerical & rec fisheries
+#---importance & impact polygons
 imptList <- c("High", "Medium", "Low")
 zoneFxn <- function(new_col, old_col){
   new_col <- ifelse(grepl("High", old_col), "High",
@@ -114,49 +113,42 @@ colCountFxn <- function(new_col, old_col){
   new_col <- ifelse(old_col <= 4, "grey", "blue")
 }
 
-msa_1a <- readOGR("./data", layer = "all_MSA_1A", GDAL1_integer64_policy = TRUE)
-msa_1a$countCol <- colCountFxn(msa_1a$countCol, msa_1a$COUNT_)
-msa_1a$Zone <- zoneFxn(msa_1a$Zone, msa_1a$Colour)
+polys <- readOGR("./data", layer = "all_overlap_polys", GDAL1_integer64_policy = TRUE)
+polys$Name <- as.character(polys$Name)
+polys$Name <- ifelse(polys$Name == "Med", "Medium", polys$Name)
+polys$countCol <- colCountFxn(polys$countCol, polys$COUNT_)
+polys$Zone <- polys$Name
 
-msa_1a_proj <- spTransform(msa_1a, "+proj=longlat +datum=WGS84")
+polys_proj <- spTransform(polys, "+proj=longlat +datum=WGS84")
 
-#---MSA 3A
-# impt areas for research
-msa_3a <- readOGR("./data", layer = "all_MSA_3A", GDAL1_integer64_policy = TRUE)
-msa_3a$countCol <- colCountFxn(msa_3a$countCol, msa_3a$COUNT_)
-msa_3a$Zone <- zoneFxn(msa_3a$Zone, msa_3a$Colour)
+# msa 1a
+msa_1a <- polys_proj[polys_proj$Map_No == "MSA_1A", ]
 
-msa_3a_proj <- spTransform(msa_3a, "+proj=longlat +datum=WGS84")
+# msa 3a
+msa_3a <- polys_proj[polys_proj$Map_No == "MSA_3A", ]
 
-#---MSA 4A 
-# THIS IS THE SAME AS TCC 10A???
-
-#---TCC 1A
-# areas of personal importance 
-tcc_1a <- readOGR("./data", layer = "all_TCC_1A", GDAL1_integer64_policy = TRUE)
-tcc_1a$countCol <- colCountFxn(tcc_1a$countCol, tcc_1a$COUNT_)
-tcc_1a$Zone <- zoneFxn(tcc_1a$Zone, tcc_1a$Colour)
-
-tcc_1a_proj <- spTransform(tcc_1a, "+proj=longlat +datum=WGS84")
-
-#---TCC 2A
-# viewsheds of personal importance
-tcc_2a <- readOGR("./data", layer = "all_TCC_2A", GDAL1_integer64_policy = TRUE)
-tcc_2a$countCol <- colCountFxn(tcc_2a$countCol, tcc_2a$COUNT_)
-tcc_2a$Zone <- zoneFxn(tcc_2a$Zone, tcc_2a$Colour)
-
-tcc_2a_proj <- spTransform(tcc_2a, "+proj=longlat +datum=WGS84")
-
-#---TCC 10A
-# NMCA zones
-nmca <- readOGR("./data", layer = "all_TCC_10A", GDAL1_integer64_policy = TRUE)
-nmca$countCol <- colCountFxn(nmca$countCol, nmca$COUNT_)
-nmca$Zone <- zoneFxn(nmca$Zone, nmca$Colour)
+# msa 4a
+# THIS IS == TCC_10A! 
+nmca <- polys_proj[polys_proj$Map_No == "TCC_10A", ]
 nmca$nmca_zone <- ifelse(nmca$Zone == "High", "Zone 1",
                          ifelse(nmca$Zone == "Medium", "Zone 2", "Zone 3"))
 nmcaList <- c("Zone 1", "Zone 2", "Zone 3")
 
-nmca_proj <- spTransform(nmca, "+proj=longlat +datum=WGS84")
+# tcc 1a
+tcc_1a <- polys_proj[polys_proj$Map_No == "TCC_1A", ]
+
+# tcc 2a
+tcc_2a <- polys_proj[polys_proj$Map_No == "TCC_2A", ]
+
+# rec areas
+recList <- c("TCC_4A", "TCC_5A", "TCC_6A", "TCC_7A", "TCC_8A")
+rec <- polys_proj[polys_proj$Map_No %in% recList, ]
+rec <- rec[rec$Name == "High", ]
+rec$acts <- ifelse(rec$Map_No == "TCC_4A", "Kayaking/Canoeing/SUP",
+                   ifelse(rec$Map_No == "TCC_5A", "Hiking/Camping/Tidepool Walks",
+                          ifelse(rec$Map_No == "TCC_6A", "Photography",
+                                 ifelse(rec$Map_No == "TCC_7A", "Bird Watching", "Hunting"))))
+actList <- unique(rec$acts)
 
 
 #---RRD
@@ -282,6 +274,7 @@ ui <- bootstrapPage(
                               checkboxGroupInput("msa1aCheck", NULL, choices = imptList))
                         ),
                         
+                        
                         helpText("MSA 3A - Important areas for research"),
                         actionButton("msa3aButton", label = "Importance"),
                         shinyjs::hidden(
@@ -310,12 +303,19 @@ ui <- bootstrapPage(
                               checkboxGroupInput("tcc2aCheck", NULL, choices = imptList))
                         ),
                         
+                        helpText("TCC 4A:8A - Recreation areas"),
+                        actionButton("recButton", label = "Activities"),
+                        shinyjs::hidden(
+                          div(id = "recDiv",
+                              checkboxGroupInput("recCheck", NULL, choices = actList))
+                        ),
                         br(), br(), 
                         
                         helpText("To download user drawn polygon: "),
                         numericInput("usr", "Participant No.: ", "1", min = 1, max = 30, step = 1),
                         selectInput("use", "Question: ", choices = c("MSA_1A", "MSA_2A", "MSA_3A", "MSA_4A",
-                                                                     "TCC_1A", "TCC_2A", "NRRD",
+                                                                     "TCC_1A", "TCC_2A", "TCC_4A", "TCC_5A",
+                                                                     "TCC_6A","TCC_7A", "TCC_8A", "NRRD",
                                                                      "1", "2", "3", "4", "5", "6", "7", "8", 
                                                                      "9", "10", "11", "12", "13", "14", "15",
                                                                      "16", "17", "18", "19", "20")),
@@ -460,6 +460,7 @@ server <- function(input, output, session) {
       shinyjs::toggle(id = "msa1aDiv")
     })
     
+    
     observeEvent(input$msa3aButton, {
       shinyjs::toggle(id = "msa3aDiv")
     })
@@ -476,6 +477,10 @@ server <- function(input, output, session) {
       shinyjs::toggle(id = "tcc2aDiv")
     })
     
+    observeEvent(input$recButton, {
+      shinyjs::toggle(id = "recDiv")
+    })
+    
 
     
     #---allow users to turn layers on/off 
@@ -485,7 +490,6 @@ server <- function(input, output, session) {
       comFish_csub <- comFish[comFish$Species %in% input$comFishCheck, ]
       spawn_csub <- spawn[spawn$Species %in% input$spawnCheck, ]
       fish_csub <- fish[fish$Species %in% input$fishCheck, ]
-      
       bird_csub <- bird[bird$Species %in% input$birdCheck, ]
       sfish_csub <- sfish[sfish$Species %in% input$sfishCheck, ]
       ais_csub <- ais[ais$Species %in% input$aisCheck, ]
@@ -495,14 +499,14 @@ server <- function(input, output, session) {
       scfc_csub <- scfc[scfc$Species %in% input$scfcCheck, ]
       geo_csub <- geo[geo$Species %in% input$geoCheck, ]
       
-      msa1a_csub <- msa_1a_proj[msa_1a_proj$Zone %in% input$msa1aCheck, ]
-      msa3a_csub <- msa_3a_proj[msa_3a_proj$Zone %in% input$msa3aCheck, ]
+      msa1a_csub <- msa_1a[msa_1a$Zone %in% input$msa1aCheck, ]
+      msa3a_csub <- msa_3a[msa_3a$Zone %in% input$msa3aCheck, ]
+      nmca_csub <- nmca[nmca$nmca_zone %in% input$nmcaCheck, ]
       
-      nmca_csub <- nmca_proj[nmca_proj$nmca_zone %in% input$nmcaCheck, ]
+      tcc1a_csub <- tcc_1a[tcc_1a$Zone %in% input$tcc1aCheck, ]
+      tcc2a_csub <- tcc_2a[tcc_2a$Zone %in% input$tcc2aCheck, ]
       
-      tcc1a_csub <- tcc_1a_proj[tcc_1a_proj$Zone %in% input$tcc1aCheck, ]
-      tcc2a_csub <- tcc_2a_proj[tcc_2a_proj$Zone %in% input$tcc2aCheck, ]
-      
+      rec_csub <- rec[rec$acts %in% input$recCheck, ]
       
       #rrd_csub <- rrd_proj[rrd_proj$Energy %in% input$rrdCheck, ]
       
@@ -598,7 +602,13 @@ server <- function(input, output, session) {
         addPolygons(data = tcc2a_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = tcc2a_csub$countCol,
                     popup = ~paste("TCC 2A <br/> Importance: ", tcc2a_csub$Zone, "<br/>",
-                                   "No. of Participants: ", tcc2a_csub$COUNT_)) 
+                                   "No. of Participants: ", tcc2a_csub$COUNT_)) %>% 
+        
+        addPolygons(data = rec_csub, weight = 1, color = "grey", smoothFactor = 0.5,
+                    fillColor = rec_csub$countCol,
+                    popup = ~paste("Rec. Areas: ", rec_csub$acts, "<br/>",
+                                   "No. of Participants: ", rec_csub$COUNT_))
+      
       
         # else{
         #   addCircleMarkers(data = NULL)
