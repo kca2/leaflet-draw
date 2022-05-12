@@ -168,14 +168,26 @@ buffList <- unique(buff_proj$Buffer_Dis)
 ###############
 # Define UI 
 # Empty SpatialPolygonsDataFrame warning when no options are selected 
+#8C979A
 ###############
 ui <- bootstrapPage(
+    tags$head(
+      tags$style(HTML(
+        "body {
+            background-color: #366677;
+            color: white; 
+        }
+        .help-block {
+            color: white; 
+        }"
+      ))
+    ),
     
     useShinyjs(),
     
     fluidRow(column(width = 12, offset = 0,
                     div(style = 'padding-left:10px',
-                        h3("EAC Dashboard - Gros Morne Region")))),
+                        h2("EAC Dashboard - Gros Morne Region")))),
     
     fluidRow(column(width = 4,  
                     div(id = "sideCol", style = 'padding-left:10px',
@@ -190,13 +202,12 @@ ui <- bootstrapPage(
                         shinyjs::hidden(
                           div(id = "comFishDiv",
                               checkboxGroupInput("comFishCheck", NULL, choices = comFishSpp))
-                        ),
-                        
+                        ), 
                         actionButton("spawnButton", label = "Spawning"),
                         shinyjs::hidden(
                           div(id = "spawnDiv",
                               checkboxGroupInput("spawnCheck", NULL, choices = spawnSpp))
-                        ),
+                        ), br(), br(), 
                         
                         actionButton("fishButton", label = "Non-commercial Fisheries"),
                         shinyjs::hidden(
@@ -208,8 +219,7 @@ ui <- bootstrapPage(
                         shinyjs::hidden(
                           div(id = "salDiv",
                               checkboxInput("salCheck", "Salmon", FALSE))
-                        ),
-                        br(),
+                        ), br(), br(), 
                         
                         actionButton("birdButton", label = "Bird & Nesting Areas"),
                         shinyjs::hidden(
@@ -221,7 +231,7 @@ ui <- bootstrapPage(
                         shinyjs::hidden(
                           div(id = "sfishDiv",
                               checkboxGroupInput("sfishCheck", NULL, choices = sfishSpp))
-                        ), br(),
+                        ), br(), br(), 
                         
                         actionButton("aisButton", label = "AIS"),
                         shinyjs::hidden(
@@ -233,25 +243,25 @@ ui <- bootstrapPage(
                         shinyjs::hidden(
                           div(id = "sarDiv",
                               checkboxGroupInput("sarCheck", NULL, choices = sarSpp))
-                        ), br(), 
+                        ),  
                         
                         actionButton("mmButton", label = "Marine Mammals"),
                         shinyjs::hidden(
                           div(id = "mmDiv",
                               checkboxGroupInput("mmCheck", NULL, choices = mmList))
-                        ), br(),
+                        ), br(), br(),
                         
                         actionButton("habsButton", label = "Sig. Marine Habitats"),
                         shinyjs::hidden(
                           div(id = "habsDiv",
                               checkboxGroupInput("habsCheck", NULL, choices = habsSpp))
-                        ), br(), 
+                        ), 
                         
                         actionButton("scfcButton", label = "Collapse/Closures"),
                         shinyjs::hidden(
                           div(id = "scfcDiv",
                               checkboxGroupInput("scfcCheck", NULL, choices = scfcSpp))
-                        ), br(), 
+                        ), br(), br(), 
                         
                         actionButton("geoButton", label = "Geologically Important"),
                         shinyjs::hidden(
@@ -264,6 +274,7 @@ ui <- bootstrapPage(
                           div(id = "ssDiv",
                               checkboxInput("ssCheck", "Sewage", FALSE))
                         ), 
+                        tags$hr(), 
                       
                         
                         # div(id = "msaDiv",
@@ -296,6 +307,7 @@ ui <- bootstrapPage(
                           div(id = "nmcaDiv",
                               checkboxGroupInput("nmcaCheck", NULL, choices = nmcaList))
                         ),
+                        tags$hr(), 
                         
                         helpText("TCC 1A - Socially important areas"),
                         actionButton("tcc1aButton", label = " Importance"),
@@ -317,6 +329,7 @@ ui <- bootstrapPage(
                           div(id = "recDiv",
                               checkboxGroupInput("recCheck", NULL, choices = actList))
                         ),
+                        tags$hr(), 
                         
                         helpText("Buffer"),
                         actionButton("buffButton", label = "Distance from National Park Boundary"),
@@ -324,9 +337,8 @@ ui <- bootstrapPage(
                           div(id = "buffDiv",
                               checkboxGroupInput("buffCheck", NULL, choices = buffList))
                         ),
-                        br(), br(), 
                         
-                        helpText("To download user drawn polygon: "),
+                        h4("To download user drawn polygon: "),
                         numericInput("usr", "Participant No.: ", "1", min = 1, max = 30, step = 1),
                         selectInput("use", "Question: ", choices = c("MSA_1A", "MSA_2A", "MSA_3A", "MSA_4A",
                                                                      "TCC_1A", "TCC_2A", "TCC_4A", "TCC_5A",
@@ -347,7 +359,7 @@ ui <- bootstrapPage(
              
              column(width = 8,
                     div(id = "mapCol", 
-                        leafletOutput("map", height = 900, width = 700)))),
+                        leafletOutput("map", height = 1000, width = 800)))),
     
     br()
     
