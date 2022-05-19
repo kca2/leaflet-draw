@@ -17,8 +17,15 @@ options(warn = 0) # suppress empty polygon warnings
 #--- circle & ID
 spp <- readOGR("./data", layer = "all_spp_kc", GDAL1_integer64_policy = TRUE)
 spp$Species <- gsub("[[:punct:]]", " ", spp$Species) # remove special characters
-spp$countCol <- ifelse(spp$COUNT_ == 500, "red",
-                       ifelse(spp$COUNT_ <= 4, "grey", "blue")) # colour polygons based on # of participants
+# spp$countCol <- ifelse(spp$COUNT_ == 500, "red",
+#                        ifelse(spp$COUNT_ <= 4, "grey", "blue")) # colour polygons based on # of participants
+# spp$countCol <- ifelse(spp$COUNT_ >=10 & spp$COUNT_ <500, "cyan", spp$countCol)
+
+spp$countCol <- ifelse(spp$COUNT_ <= 4, "grey", 
+                       ifelse(spp$COUNT_ >= 10, "cyan", "blue"))
+spp$countCol <- ifelse(spp$COUNT_ == 500, "green", spp$countCol)
+
+
 spp$parts <- ifelse(spp$COUNT_ == 500, 
                     "ICZM Atlas of Sig. Coastal & Marine Areas", 
                     spp$COUNT_)
@@ -43,7 +50,7 @@ fish <- spp_proj[spp_proj$Species %in% fishSpp, ]
 
 # salmon
 salmon <- readOGR("./data", layer = "Salmonrivers_KC", GDAL1_integer64_policy = TRUE)
-salmon$countCol <- ifelse(is.na(salmon$MapFile), "red", "Grey")
+salmon$countCol <- ifelse(is.na(salmon$MapFile), "green", "Grey")
 salmon$SPECIES <- as.character(salmon$SPECIES)
 salmon$SPECIES <- ifelse(salmon$SPECIES == "Salmon & Sea Trout", "Salmon", salmon$SPECIES)
 salmon$REF <- ifelse(is.na(salmon$MapFile), "ICZM Atlas of Sig. Coastal & Marine Areas",
@@ -100,7 +107,7 @@ geoList <- unique(geo$Species)
 
 # sewage outflow
 ss <- readOGR("./data", layer = "SS_KC", GDAL1_integer64_policy = TRUE)
-ss$countCol <- ifelse(ss$MapFile == "Atlas", "red", "Grey")
+ss$countCol <- ifelse(ss$MapFile == "Atlas", "green", "Grey")
 ss$REF <- ifelse(ss$MapFile == "Atlas", "ICZM Atlas of Sig. Coastal & Marine Areas",
                  "Previous workshops")
 ss_proj <- spTransform(ss, "+proj=longlat +datum=WGS84")
@@ -112,7 +119,8 @@ zoneFxn <- function(new_col, old_col){
                     ifelse(grepl("Med", old_col), "Medium", "Low"))
 }
 colCountFxn <- function(new_col, old_col){
-  new_col <- ifelse(old_col <= 4, "grey", "blue")
+  new_col <- ifelse(old_col <= 4, "grey", 
+                    ifelse(old_col >= 10, "cyan", "blue"))
 }
 
 polys <- readOGR("./data", layer = "all_overlap_polys", GDAL1_integer64_policy = TRUE)
@@ -332,7 +340,7 @@ ui <- bootstrapPage(
                         tags$hr(), 
                         
                         helpText("Buffer"),
-                        actionButton("buffButton", label = "Distance from National Park Boundary"),
+                        actionButton("buffButton", label = "Distance from National Park Boundary (km)"),
                         shinyjs::hidden(
                           div(id = "buffDiv",
                               checkboxGroupInput("buffCheck", NULL, choices = buffList))
@@ -405,6 +413,9 @@ server <- function(input, output, session) {
             addProviderTiles(provider = providers$Esri.WorldTopoMap) %>% 
             setView(lng = -57.80, lat = 49.60, zoom = 9.5) %>%
             addScaleBar() %>% 
+            addMeasure(primaryLengthUnit = "kilometers", 
+                       primaryAreaUnit = "sqmeters",
+                       position = "topleft") %>% 
             addDrawToolbar(rectangleOptions = FALSE,
                            editOptions = editToolbarOptions(edit = FALSE,
                                                             remove = TRUE),
@@ -553,8 +564,8 @@ server <- function(input, output, session) {
         #             popup = ~paste("Species: ", spp_csub$Species, "<br/>",
         #                            "No. of Participants: ", spp_csub$COUNT_)) %>% 
         
-        addPolygons(data = comFish_csub, weight = 1, color = "grey", smoothFactor = 0.5,
-                    fillColor = comFish_csub$countCol,
+        addPolygons(data = comFish_csub, weight = 1, stroke = FALSE, smoothFactor = 0.5,
+                    fillColor = comFish_csub$countCol,  
                     popup = ~paste("Species: ", comFish_csub$Species, "<br/>",
                                    "No. of Participants: ", comFish_csub$parts)) %>% 
         
