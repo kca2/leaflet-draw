@@ -177,18 +177,18 @@ buffList <- unique(buff_proj$Buffer_Dis)
 
 gmBath <- read.bathy("./data/marmap_coord_-60.5;46;-51;52.13_res_1.csv", header = T)
 
-#gmRast <- marmap::as.raster(gmBath)
+gmRast <- marmap::as.raster(gmBath)
 
-# nfld <- readOGR("./data", layer = "select_divs", GDAL1_integer64_policy = TRUE)
-# nfld_proj <-  spTransform(nfld, "+proj=longlat +datum=WGS84")
+nfld <- readOGR("./data", layer = "select_divs", GDAL1_integer64_policy = TRUE)
+nfld_proj <-  spTransform(nfld, "+proj=longlat +datum=WGS84")
 
 # remove land 
-# gmMask <- mask(gmRast, nfld_proj)
-# gmMask[gmMask@data@values > 0] <- NA
+gmMask <- mask(gmRast, nfld_proj)
+gmMask[gmMask@data@values > 0] <- NA
 
 # remove all elevations above sea level
-gmMask <- marmap::as.raster(gmBath)
-gmMask[gmMask@data@values > 0] <- NA
+# gmMask <- marmap::as.raster(gmBath)
+# gmMask[gmMask@data@values > 0] <- NA
 
 bPal <- colorNumeric(c("#0C2C84", "#41B6C4", "#FFFFCC"), values(gmMask), na.color = "transparent")
 
