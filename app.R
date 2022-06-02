@@ -172,8 +172,10 @@ buffList <- unique(buff_proj$Buffer_Dis)
 # bath_proj <- spTransform(bath, "+proj=longlat +datum=WGS84")
 # bathList <- unique(bath_proj$ID)
 # 
-gmBath <- getNOAA.bathy(lon1 = -60.5, lon2 = -51, lat1 = 46, lat2 = 52.13, resolution = 1,
-                        keep = T, path = "./data")
+# gmBath <- getNOAA.bathy(lon1 = -60.5, lon2 = -51, lat1 = 46, lat2 = 52.13, resolution = 1,
+#                         keep = T, path = "./data")
+
+gmBath <- read.bathy("./data/marmap_coord_-60.5;46;-51;52.13_res_1.csv", header = T)
 
 #gmRast <- marmap::as.raster(gmBath)
 
