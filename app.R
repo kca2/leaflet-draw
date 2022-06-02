@@ -615,7 +615,7 @@ server <- function(input, output, session) {
         #             popup = ~paste("Species: ", spp_csub$Species, "<br/>",
         #                            "No. of Participants: ", spp_csub$COUNT_)) %>% 
         
-        addPolygons(data = comFish_csub, weight = 1, stroke = FALSE, smoothFactor = 0.5,
+        addPolygons(data = comFish_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = comFish_csub$countCol,  
                     popup = ~paste("Species: ", comFish_csub$Species, "<br/>",
                                    "No. of Participants: ", comFish_csub$parts)) %>% 
