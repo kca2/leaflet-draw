@@ -7,7 +7,9 @@ library(leaflet.extras)
 library(tidyverse)
 library(sf) # reproject from UTM to WGS84
 library(shinyjs)
-library(rgdal) #to read in polygons
+library(rgdal) # to read in polygons
+library(marmap) # get bathymetry data
+library(raster) # display bathymetry as raster 
 
 options(warn = 0) # suppress empty polygon warnings 
 
@@ -165,6 +167,30 @@ buff <- readOGR("./data", layer = "all_buffers", GDAL1_integer64_policy = TRUE)
 buff_proj <- spTransform(buff, "+proj=longlat +datum=WGS84")
 buffList <- unique(buff_proj$Buffer_Dis)
 
+#--- bath
+# bath <- readOGR("./data", layer = "bathCont", GDAL1_integer64_policy = TRUE)
+# bath_proj <- spTransform(bath, "+proj=longlat +datum=WGS84")
+# bathList <- unique(bath_proj$ID)
+# 
+gmBath <- getNOAA.bathy(lon1 = -60.5, lon2 = -51, lat1 = 46, lat2 = 52.13, resolution = 1,
+                        keep = T, path = "./data")
+
+#gmRast <- marmap::as.raster(gmBath)
+
+# nfld <- readOGR("./data", layer = "select_divs", GDAL1_integer64_policy = TRUE)
+# nfld_proj <-  spTransform(nfld, "+proj=longlat +datum=WGS84")
+
+# remove land 
+# gmMask <- mask(gmRast, nfld_proj)
+# gmMask[gmMask@data@values > 0] <- NA
+
+# remove all elevations above sea level
+gmMask <- marmap::as.raster(gmBath)
+gmMask[gmMask@data@values > 0] <- NA
+
+bPal <- colorNumeric(c("#0C2C84", "#41B6C4", "#FFFFCC"), values(gmMask), na.color = "transparent")
+
+#bPal <- colorNumeric(c("#06114f", "#710096", "#ffffcc"), values(gmMask), na.color = "transparent")
 
 #---RRD
 # rrd <- readOGR("./data", layer = "RRD", GDAL1_integer64_policy = TRUE)
@@ -337,7 +363,22 @@ ui <- bootstrapPage(
                           div(id = "recDiv",
                               checkboxGroupInput("recCheck", NULL, choices = actList))
                         ),
-                        tags$hr(), 
+                        tags$hr(),
+                        
+                        # helpText("Bathymetry"),
+                        # actionButton("bathButton", label = "Bathymetry (m)"),
+                        # shinyjs::hidden(
+                        #   div(id = "bathDiv",
+                        #       checkboxGroupInput("bathCheck", NULL, choices = bathList))
+                        # ),
+                        
+                        helpText("Bathymetry"),
+                        actionButton("bathButton", label = "Bathymetry (m)"),
+                        shinyjs::hidden(
+                          div(id = "bathDiv",
+                              checkboxInput("bathCheck", "Bathymetry", FALSE))
+                          ),
+                        
                         
                         helpText("Buffer"),
                         actionButton("buffButton", label = "Distance from National Park Boundary (km)"),
@@ -411,7 +452,8 @@ server <- function(input, output, session) {
     
     output$map <- renderLeaflet({
         leaflet() %>%
-            addProviderTiles(provider = providers$Esri.WorldTopoMap) %>% 
+            addProviderTiles(provider = providers$Esri.WorldTopoMap) %>%
+            #addProviderTiles(provider = providers$Esri.OceanBasemap) %>% 
             setView(lng = -57.80, lat = 49.60, zoom = 9.5) %>%
             addScaleBar() %>% 
             addMeasure(primaryLengthUnit = "kilometers", 
@@ -424,6 +466,7 @@ server <- function(input, output, session) {
                            circleOptions = FALSE,
                            circleMarkerOptions = FALSE,
                            markerOptions = FALSE)
+ 
     })
     
     # #---Spp lyr
@@ -520,6 +563,10 @@ server <- function(input, output, session) {
       shinyjs::toggle(id = "recDiv")
     })
     
+    observeEvent(input$bathButton, {
+      shinyjs::toggle(id = "bathDiv")
+    })
+    
     observeEvent(input$buffButton, {
       shinyjs::toggle(id = "buffDiv")
     })
@@ -551,6 +598,7 @@ server <- function(input, output, session) {
       
       rec_csub <- rec[rec$acts %in% input$recCheck, ]
       
+      #bath_csub <- bath_proj[bath_proj$ID %in% input$bathCheck, ]
       buff_csub <- buff_proj[buff_proj$Buffer_Dis %in% input$buffCheck, ]
       
       #rrd_csub <- rrd_proj[rrd_proj$Energy %in% input$rrdCheck, ]
@@ -651,6 +699,11 @@ server <- function(input, output, session) {
                     popup = ~paste("Rec. Areas: ", rec_csub$acts, "<br/>",
                                    "No. of Participants: ", rec_csub$COUNT_)) %>% 
         
+        # addPolygons(data = bath_csub, weight = 1, color = "grey", smoothFactor = 0.5,
+        #             fillColor = bath_csub$countCol, fillOpacity = 1, 
+        #             popup = ~paste("Depth: ", bath_csub$ID, " m")) %>% 
+        
+
         addPolygons(data = buff_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     popup = ~paste("Distance from National Park Boundary: ", 
                                    buff_csub$Buffer_Dis, " km"))
@@ -680,12 +733,22 @@ server <- function(input, output, session) {
                            popup = ~paste("Location: ", ss_proj$SiteName, "<br/>",
                                           "Source: ", ss_proj$REF))
       }
+      
+  
+      
     })
     
-    # buffers
-    
+    # allow users to turn bathymetry on/off
+    observe({
+      prox <- leafletProxy("map")
+      prox %>% clearImages() %>% clearControls()
+      if(input$bathCheck){
+        prox %>% 
+          addRasterImage(gmMask, opacity = 0.4, colors = bPal) %>%
+          addLegend(pal = bPal, values = values(gmMask), title = "Depth (m)")
+        }
+    })
 
-    
     output$dlshp <- downloadHandler(
         # filename = function() {
         #   spp_sub <- spp_proj[spp_proj$Species == input$spp, ]
