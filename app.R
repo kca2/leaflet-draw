@@ -209,12 +209,16 @@ bPal <- colorNumeric(c("#0C2C84", "#41B6C4", "#FFFFCC"), values(gmMask), na.colo
 ui <- bootstrapPage(
     tags$head(
       tags$style(HTML(
-        "body {
-            background-color: #366677;
-        }
-        h2{
-            color: white;
-        }"
+        "body {background-color: #366677; color: white;}
+
+        h2{color: white;}
+
+        .tabbable > .nav > li > a {
+            background-color: #366677; color: white; border-bottom: 1px solid white;}
+        .tabbable > .nav > li[class = active] > a {
+            background-color: #366677; color: white; font-weight: bold; border-bottom: 1px solid white;}
+
+        .help-block{color: white;}"
       ))
     ),
     
@@ -222,10 +226,11 @@ ui <- bootstrapPage(
     
     div(id = "main", style = 'padding-left:10px; padding-right:5px',
         
-        h2("EAC Dashboard - Gros Morne Region", style = "color = white;"),
+        h2("EAC Dashboard - Gros Morne Region"),
         
         sidebarLayout(
           sidebarPanel(
+            style = "background-color: #366677;",
             width = 5, 
             tabsetPanel(type = "tabs",
                         tabPanel("Circle & Identify",
@@ -372,7 +377,8 @@ ui <- bootstrapPage(
                                  ) 
                         
                         ), # end of tabset panel 
-            fluidRow(tags$hr(style = "border-color: black;"),
+            fluidRow(tags$hr(style = "border-color: white;"),
+                     style = "padding-left:10px; padding-right: 10px;",
                      helpText("To download user drawn polygon: "),
                      numericInput("usr", "Participant No.: ", "1", min = 1, max = 30, step = 1),
                      selectInput("use", "Question: ", choices = c("MSA_1A", "MSA_2A", "MSA_3A", "MSA_4A",
