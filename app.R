@@ -213,10 +213,13 @@ ui <- bootstrapPage(
 
         h2{color: white;}
 
+        hr{color: white;}
+
         .tabbable > .nav > li > a {
-            background-color: #366677; color: white; border-bottom: 1px solid white;}
+            background-color: #366677; color: white; border: 0px solid white;}
         .tabbable > .nav > li[class = active] > a {
-            background-color: #366677; color: white; font-weight: bold; border-bottom: 1px solid white;}
+            background-color: #366677; color: white; border: 2px solid white;}
+        .tabbable > .nav {border: 0px solid white;}
 
         .help-block{color: white;}"
       ))
@@ -231,10 +234,10 @@ ui <- bootstrapPage(
         sidebarLayout(
           sidebarPanel(
             style = "background-color: #366677;",
-            width = 5, 
+            width = 6, 
             tabsetPanel(type = "tabs",
                         tabPanel("Circle & Identify",
-                                 br(),
+                                 tags$hr(),
                                  actionButton("comFishButton", label = "Commercial Fisheries"),
                                  shinyjs::hidden(
                                    div(id = "comFishDiv",
@@ -315,6 +318,7 @@ ui <- bootstrapPage(
                                  ), # end of circle & ID tab
                         
                         tabPanel("MSA",
+                                 tags$hr(), 
                                  helpText("MSA 1A - Important areas for commercial & recreational fisheries"),
                                  actionButton("msa1aButton", label = "Importance"),
                                  shinyjs::hidden(
@@ -338,6 +342,7 @@ ui <- bootstrapPage(
                                  ), # end of MSA tab 
                         
                         tabPanel("TCC",
+                                 tags$hr(), 
                                  helpText("TCC 1A - Socially important areas"),
                                  actionButton("tcc1aButton", label = " Importance"),
                                  shinyjs::hidden(
@@ -360,7 +365,7 @@ ui <- bootstrapPage(
                                  )
                                  ), # end of TCC tab
                         tabPanel("Misc.",
-                                 
+                                 tags$hr(), 
                                  helpText("Bathymetry"),
                                  actionButton("bathButton", label = "Bathymetry (m)"),
                                  shinyjs::hidden(
@@ -377,24 +382,27 @@ ui <- bootstrapPage(
                                  ) 
                         
                         ), # end of tabset panel 
-            fluidRow(tags$hr(style = "border-color: white;"),
+            fluidRow(tags$hr(),
                      style = "padding-left:10px; padding-right: 10px;",
                      helpText("To download user drawn polygon: "),
-                     numericInput("usr", "Participant No.: ", "1", min = 1, max = 30, step = 1),
-                     selectInput("use", "Question: ", choices = c("MSA_1A", "MSA_2A", "MSA_3A", "MSA_4A",
+                     helpText("Participant No.:"),
+                     numericInput("usr", NULL, "1", min = 1, max = 30, step = 1),
+                     helpText("Question:"),
+                     selectInput("use", NULL, choices = c("MSA_1A", "MSA_2A", "MSA_3A", "MSA_4A",
                                                                   "TCC_1A", "TCC_2A", "TCC_4A", "TCC_5A",
                                                                   "TCC_6A","TCC_7A", "TCC_8A", "NRRD",
                                                                   "1_A", "1_B", "1_C", "1_D", "1_E",
                                                                   "2", "3", "4", "5", "6", "7", "8",
                                                                   "9", "10", "11", "12", "13", "14", "15",
                                                                   "16", "17", "18", "19", "20")),
-                     selectInput("zones", "Importance: ", choices = c("High", "Med", "Low")),
+                     helpText("Importance:"),
+                     selectInput("zones", NULL, choices = c("High", "Med", "Low")),
                      downloadButton("dlshp", "Download polygon")
                      
                      ) # end fluid row 
           ), # end sidebar panel 
           mainPanel(
-            width = 7, 
+            width = 6, 
             leafletOutput("map", height = 1000, width = 800))
         ) # end side bar layout 
         
