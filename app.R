@@ -211,7 +211,9 @@ ui <- bootstrapPage(
       tags$style(HTML(
         "body {
             background-color: #366677;
-
+        }
+        h2{
+            color: white;
         }"
       ))
     ),
@@ -220,7 +222,7 @@ ui <- bootstrapPage(
     
     div(id = "main", style = 'padding-left:10px; padding-right:5px',
         
-        h2("EAC Dashboard - Gros Morne Region"),
+        h2("EAC Dashboard - Gros Morne Region", style = "color = white;"),
         
         sidebarLayout(
           sidebarPanel(
@@ -232,37 +234,37 @@ ui <- bootstrapPage(
                                  shinyjs::hidden(
                                    div(id = "comFishDiv",
                                        checkboxGroupInput("comFishCheck", NULL, choices = comFishSpp))
-                                 ), br(),  
+                                 ), tags$p(),  
                                  
                                  actionButton("spawnButton", label = "Spawning"),
                                  shinyjs::hidden(
                                    div(id = "spawnDiv",
                                        checkboxGroupInput("spawnCheck", NULL, choices = spawnSpp))
-                                 ), br(), 
+                                 ), tags$p(), 
                                  
                                  actionButton("fishButton", label = "Non-commercial Fisheries"),
                                  shinyjs::hidden(
                                    div(id = "fishDiv",
                                        checkboxGroupInput("fishCheck", NULL, choices = fishSpp))
-                                 ), br(), 
+                                 ), tags$p(), 
                                  
                                  actionButton("salButton", label = "Salmon Rivers"),
                                  shinyjs::hidden(
                                    div(id = "salDiv",
                                        checkboxInput("salCheck", "Salmon", FALSE))
-                                 ), br(), 
+                                 ), tags$p(), 
                                  
                                  actionButton("birdButton", label = "Bird & Nesting Areas"),
                                  shinyjs::hidden(
                                    div(id = "birdDiv",
                                        checkboxGroupInput("birdCheck", NULL, choices = birdList))
-                                 ), br(), 
+                                 ), tags$p(), 
                                  
                                  actionButton("sfishButton", label = "Shellfish"),
                                  shinyjs::hidden(
                                    div(id = "sfishDiv",
                                        checkboxGroupInput("sfishCheck", NULL, choices = sfishSpp))
-                                 ), br(), 
+                                 ), tags$p(), 
                                  
                                  actionButton("aisButton", label = "AIS"),
                                  shinyjs::hidden(
@@ -274,32 +276,32 @@ ui <- bootstrapPage(
                                  shinyjs::hidden(
                                    div(id = "sarDiv",
                                        checkboxGroupInput("sarCheck", NULL, choices = sarSpp))
-                                 ), br(), 
+                                 ), tags$p(), 
                                  
                                  actionButton("mmButton", label = "Marine Mammals"),
                                  shinyjs::hidden(
                                    div(id = "mmDiv",
                                        checkboxGroupInput("mmCheck", NULL, choices = mmList))
-                                 ), br(), 
+                                 ), tags$p(), 
                                  
                                  actionButton("habsButton", label = "Sig. Marine Habitats"),
                                  shinyjs::hidden(
                                    div(id = "habsDiv",
                                        checkboxGroupInput("habsCheck", NULL, choices = habsSpp))
-                                 ), br(), 
+                                 ), tags$p(), 
                                  
                                  actionButton("scfcButton", label = "Collapse/Closures"),
                                  shinyjs::hidden(
                                    div(id = "scfcDiv",
                                        checkboxGroupInput("scfcCheck", NULL, choices = scfcSpp))
-                                 ), br(), 
+                                 ), tags$p(), 
                                  
                                  actionButton("geoButton", label = "Geologically Important"),
                                  shinyjs::hidden(
                                    div(id = "geoDiv",
                                        checkboxGroupInput("geoCheck", NULL, choices = geoList))
-                                 ), br(),  
-                                 
+                                 ), tags$p(),  
+                                  
                                  actionButton("ssButton", label = "Sewage Outflows"),
                                  shinyjs::hidden(
                                    div(id = "ssDiv",
@@ -370,10 +372,8 @@ ui <- bootstrapPage(
                                  ) 
                         
                         ), # end of tabset panel 
-            fluidRow(tags$hr(),
-
-                     
-                     tags$b(h4("To download user drawn polygon: ")),
+            fluidRow(tags$hr(style = "border-color: black;"),
+                     helpText("To download user drawn polygon: "),
                      numericInput("usr", "Participant No.: ", "1", min = 1, max = 30, step = 1),
                      selectInput("use", "Question: ", choices = c("MSA_1A", "MSA_2A", "MSA_3A", "MSA_4A",
                                                                   "TCC_1A", "TCC_2A", "TCC_4A", "TCC_5A",
