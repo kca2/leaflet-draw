@@ -389,7 +389,7 @@ ui <- bootstrapPage(
           ), # end sidebar panel 
           mainPanel(
             width = 7, 
-            leafletOutput("map", height = 900))
+            leafletOutput("map", height = 1000, width = 800))
         ) # end side bar layout 
         
         ) # end main div
