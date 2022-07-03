@@ -309,12 +309,17 @@ ui <- bootstrapPage(
                                    div(id = "geoDiv",
                                        checkboxGroupInput("geoCheck", NULL, choices = geoList))
                                  ), tags$p(),  
-                                  
+                                 
                                  actionButton("ssButton", label = "Sewage Outflows"),
                                  shinyjs::hidden(
                                    div(id = "ssDiv",
                                        checkboxInput("ssCheck", "Sewage", FALSE))
                                  ), br()
+                                 
+                                 # tags$hr(),
+                                 # actionButton("clearCircle", label = "Clear All Circle & Identify"),
+                                 # br()
+                                 
                                  ), # end of circle & ID tab
                         
                         tabPanel("MSA",
@@ -382,6 +387,11 @@ ui <- bootstrapPage(
                                  ) 
                         
                         ), # end of tabset panel 
+            
+            fluidRow(tags$hr(),
+                     style = "padding-left:10px; padding-right:10px;",
+                     actionButton("clearLyrs", "Clear All Polygons")
+                     ), # end clear all fluid row
             fluidRow(tags$hr(),
                      style = "padding-left:10px; padding-right: 10px;",
                      helpText("To download user drawn polygon: "),
@@ -399,7 +409,7 @@ ui <- bootstrapPage(
                      selectInput("zones", NULL, choices = c("High", "Med", "Low")),
                      downloadButton("dlshp", "Download polygon")
                      
-                     ) # end fluid row 
+                     ) # end polygon d/l fluid row 
           ), # end sidebar panel 
           mainPanel(
             width = 6, 
@@ -764,6 +774,31 @@ server <- function(input, output, session) {
           addLegend(pal = bPal, values = values(gmMask), title = "Depth (m)")
         }
     })
+    
+    # allow users to clear all layers displayed
+    observeEvent(input$clearLyrs, {
+      updateCheckboxGroupInput(session, "comFishCheck", choices = comFishSpp, selected = NULL)
+      updateCheckboxGroupInput(session, "spawnCheck", choices = spawnSpp, selected = NULL)
+      updateCheckboxGroupInput(session, "fishCheck", choices = fishSpp, selected = NULL)
+      updateCheckboxInput(session, "salCheck", FALSE)
+      updateCheckboxGroupInput(session, "birdCheck", choices = birdList, selected = NULL)
+      updateCheckboxGroupInput(session, "sfishCheck", choices = sfishSpp, selected = NULL)
+      updateCheckboxGroupInput(session, "aisCheck", choices = aisSpp, selected = NULL)
+      updateCheckboxGroupInput(session, "sarCheck", choices = sarSpp, selected = NULL)
+      updateCheckboxGroupInput(session, "mmCheck", choices = mmList, selected = NULL)
+      updateCheckboxGroupInput(session, "habsCheck", choices = habsSpp, selected = NULL)
+      updateCheckboxGroupInput(session, "scfcCheck", choices = scfcSpp, selected = NULL)
+      updateCheckboxInput(session, "ssCheck", FALSE)
+      updateCheckboxGroupInput(session, "msa1aCheck", choices = imptList, selected = NULL)
+      updateCheckboxGroupInput(session, "msa3aCheck", choices = imptList, selected = NULL)
+      updateCheckboxGroupInput(session, "nmcaCheck", choices = nmcaList, selected = NULL)
+      updateCheckboxGroupInput(session, "tcc1aCheck", choices = imptList, selected = NULL)
+      updateCheckboxGroupInput(session, "tcc2aCheck", choices = imptList, selected = NULL)
+      updateCheckboxGroupInput(session, "recCheck", choices = actList, selected = NULL)
+      updateCheckboxInput(session, "bathCheck", FALSE)
+      updateCheckboxGroupInput(session, "buffCheck", choices = buffList, selected = NULL)
+    })
+    
 
     output$dlshp <- downloadHandler(
         # filename = function() {
