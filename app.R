@@ -390,7 +390,7 @@ ui <- bootstrapPage(
             
             fluidRow(tags$hr(),
                      style = "padding-left:10px; padding-right:10px;",
-                     actionButton("clearLyrs", "Clear All Polygons")
+                     actionButton("clearLyrs", "Clear All Displayed Layers")
                      ), # end clear all fluid row
             fluidRow(tags$hr(),
                      style = "padding-left:10px; padding-right: 10px;",
@@ -780,7 +780,7 @@ server <- function(input, output, session) {
       updateCheckboxGroupInput(session, "comFishCheck", choices = comFishSpp, selected = NULL)
       updateCheckboxGroupInput(session, "spawnCheck", choices = spawnSpp, selected = NULL)
       updateCheckboxGroupInput(session, "fishCheck", choices = fishSpp, selected = NULL)
-      updateCheckboxInput(session, "salCheck", FALSE)
+      updateCheckboxInput(session, "salCheck", value = FALSE)
       updateCheckboxGroupInput(session, "birdCheck", choices = birdList, selected = NULL)
       updateCheckboxGroupInput(session, "sfishCheck", choices = sfishSpp, selected = NULL)
       updateCheckboxGroupInput(session, "aisCheck", choices = aisSpp, selected = NULL)
@@ -788,14 +788,14 @@ server <- function(input, output, session) {
       updateCheckboxGroupInput(session, "mmCheck", choices = mmList, selected = NULL)
       updateCheckboxGroupInput(session, "habsCheck", choices = habsSpp, selected = NULL)
       updateCheckboxGroupInput(session, "scfcCheck", choices = scfcSpp, selected = NULL)
-      updateCheckboxInput(session, "ssCheck", FALSE)
+      updateCheckboxInput(session, "ssCheck", value = FALSE)
       updateCheckboxGroupInput(session, "msa1aCheck", choices = imptList, selected = NULL)
       updateCheckboxGroupInput(session, "msa3aCheck", choices = imptList, selected = NULL)
       updateCheckboxGroupInput(session, "nmcaCheck", choices = nmcaList, selected = NULL)
       updateCheckboxGroupInput(session, "tcc1aCheck", choices = imptList, selected = NULL)
       updateCheckboxGroupInput(session, "tcc2aCheck", choices = imptList, selected = NULL)
       updateCheckboxGroupInput(session, "recCheck", choices = actList, selected = NULL)
-      updateCheckboxInput(session, "bathCheck", FALSE)
+      updateCheckboxInput(session, "bathCheck", value = FALSE)
       updateCheckboxGroupInput(session, "buffCheck", choices = buffList, selected = NULL)
     })
     
