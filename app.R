@@ -221,7 +221,11 @@ ui <- bootstrapPage(
             background-color: #366677; color: white; border: 2px solid white;}
         .tabbable > .nav {border: 0px solid white;}
 
-        .help-block{color: white;}"
+        .help-block{color: white;}
+  
+        .selectize-input{width: 200px;}
+        
+        .form-control{width: 200px;}"
       ))
     ),
     
@@ -424,54 +428,6 @@ ui <- bootstrapPage(
 
 
 
-
-#                         
-#                         
-# 
-#                         # helpText("RRD polygons"),
-#                         # checkboxGroupInput("rrdCheck", NULL, #"Please select all that apply: ", 
-#                         #                    choices = rrd_list)
-#                         
-#                         )),
-#              
-#              column(width = 8,
-#                     div(id = "mapCol", 
-#                         leafletOutput("map", height = 1000, width = 800)))),
-#     
-#     br()
-#     
-#     # fluidRow(column(width = 12, offset = 0, #style = "background-color: #A7AFB2",
-#     #                 div(style = 'padding-left:10px',
-#     #                     helpText("To download user drawn polygon: "),
-#     #                     "Please select from the following: "))), 
-#     # br(), 
-#     # 
-#     # fluidRow(column(width = 2, offset = 0,
-#     #                 div(style = 'padding-left:10px',
-#     #                     id = "usrRow",
-#     #                     numericInput("usr", "Participant Number: ", "1", min = 1, max = 30, step = 1))),
-#     #          # column(width = 3, 
-#     #          #        id = "sppRow",
-#     #          #        selectInput("spp", "Species: ", choices = spp_list)),
-#     #          column(width = 1,
-#     #                 id = "usage",
-#     #                 selectInput("use", "Question: ", choices = c("MSA 1A", "MSA 2A", "MSA 3A", "MSA 4A",
-#     #                                                           "TCC 1A", "TCC 2A", "NNRD"))),
-#     #          column(width = 1, 
-#     #                 id = "zoneID",
-#     #                 selectInput("zones", "Importance: ", choices = c("High", "Med", "Low"))),
-#     #          column(width = 1, 
-#     #                 div(style = 'padding-top:25px', 
-#     #                 id = "downloaddiv",
-#     #                 downloadButton("dlshp", "Download polygon"))))
-#     
-#     # fluidRow(column(width = 5, offset = 0,
-#     #                 div(style = 'padding-left:10px', 
-#     #                     id = "downloaddiv",
-#     #                     downloadButton("dlshp", "Download polygon")))),
-#     # br()
-# )
-
 ###############
 # Define server logic
 ###############
@@ -496,22 +452,6 @@ server <- function(input, output, session) {
  
     })
     
-    # #---Spp lyr
-    # spp_cfilter <- reactive({
-    #   spp_proj[spp_proj$Species %in% input$sppCheck, ]
-    # })
-    # 
-    # observe({
-    #   spp_csub <- spp_proj[spp_proj$Species %in% input$sppCheck, ]
-    #   leafletProxy("map", data = spp_cfilter()) %>%
-    #     #clearShapes() %>%
-    #     addPolygons(weight = 1, color = "blue", popup = ~paste("No. of Surveyees: ", spp_csub$COUNT_, "<br/>",
-    #                                                            "Species: ", spp_csub$Species))
-    # })
-    
-    # observeEvent(input$msaButton, {
-    #   shinyjs::toggle(id = "msaDiv")
-    # })
     
     observeEvent(input$comFishButton, {
       shinyjs::toggle(id = "comFishDiv")
@@ -633,12 +573,6 @@ server <- function(input, output, session) {
       leafletProxy("map") %>%
         
         clearShapes() %>%
-        
-        # addPolygons(data = spp_proj[spp_proj$Species %in% input$sppCheck, ], 
-        #             weight = 1, color = "grey", smoothFactor = 0.5, 
-        #             fillColor = spp_csub$countCol,
-        #             popup = ~paste("Species: ", spp_csub$Species, "<br/>",
-        #                            "No. of Participants: ", spp_csub$COUNT_)) %>% 
         
         addPolygons(data = comFish_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = comFish_csub$countCol,
