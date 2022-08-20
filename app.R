@@ -17,22 +17,29 @@ options(warn = 0) # suppress empty polygon warnings
 # reproject data as needed & get names for each unique layer 
 ###############
 #--- circle & ID
-spp <- readOGR("./data", layer = "all_spp_kc", GDAL1_integer64_policy = TRUE)
-spp$Species <- gsub("[[:punct:]]", " ", spp$Species) # remove special characters
-# spp$countCol <- ifelse(spp$COUNT_ == 500, "red",
-#                        ifelse(spp$COUNT_ <= 4, "grey", "blue")) # colour polygons based on # of participants
-# spp$countCol <- ifelse(spp$COUNT_ >=10 & spp$COUNT_ <500, "cyan", spp$countCol)
+#spp <- readOGR("./data", layer = "all_spp_msa_aug", GDAL1_integer64_policy = TRUE)
+spp <- read_sf(dsn = "./data", layer = "all_spp_msa_aug")
 
-spp$countCol <- ifelse(spp$COUNT_ <= 4, "grey", 
-                       ifelse(spp$COUNT_ >= 10, "cyan", "blue"))
+spp$Species <- gsub("[[:punct:]]", " ", spp$Species) # remove special characters
+
+
+colCountFxn <- function(new_col, old_col){
+  new_col <- ifelse(old_col <= 4, "black", 
+                    ifelse(old_col >= 10, "cyan", "blue"))
+}
+
+spp$countCol <- colCountFxn(spp$countCol, spp$COUNT_)
 spp$countCol <- ifelse(spp$COUNT_ == 500, "green", spp$countCol)
+
 
 
 spp$parts <- ifelse(spp$COUNT_ == 500, 
                     "ICZM Atlas of Sig. Coastal & Marine Areas", 
                     spp$COUNT_)
 
-spp_proj <- spTransform(spp, "+proj=longlat +datum=WGS84")
+#spp_proj <- spTransform(spp, "+proj=longlat +datum=WGS84")
+spp_proj <- st_transform(spp, "+proj=longlat +datum=WGS84")
+
 
 spp_list <- unique(spp_proj$Species)
 
@@ -47,17 +54,19 @@ spawnSpp <- c("Capelin Spawning", "Herring Spawning", "Mackerel Spawning")
 spawn <- spp_proj[spp_proj$Species %in% spawnSpp, ]
 
 # regular fish
-fishSpp <- c("Porbeagle Shark", "Sunfish", "Swordfish")
+fishSpp <- c("Sunfish", "Swordfish")
 fish <- spp_proj[spp_proj$Species %in% fishSpp, ]
 
 # salmon
-salmon <- readOGR("./data", layer = "Salmonrivers_KC", GDAL1_integer64_policy = TRUE)
-salmon$countCol <- ifelse(is.na(salmon$MapFile), "green", "Grey")
+#salmon <- readOGR("./data", layer = "Salmonrivers_KC", GDAL1_integer64_policy = TRUE)
+salmon <- read_sf(dsn = "./data", layer = "Salmonrivers_KC")
+salmon$countCol <- ifelse(is.na(salmon$MapFile), "green", "black")
 salmon$SPECIES <- as.character(salmon$SPECIES)
 salmon$SPECIES <- ifelse(salmon$SPECIES == "Salmon & Sea Trout", "Salmon", salmon$SPECIES)
 salmon$REF <- ifelse(is.na(salmon$MapFile), "ICZM Atlas of Sig. Coastal & Marine Areas",
                      "Previous workshops")
-sal_proj <- spTransform(salmon, "+proj=longlat +datum=WGS84")
+#sal_proj <- spTransform(salmon, "+proj=longlat +datum=WGS84")
+sal_proj <- st_transform(salmon, "+proj=longlat +datum=WGS84")
 
 # birds & nesting
 birdSpp <- c("Waterfowl Seabird", "Waterfowl Seabirds",
@@ -108,30 +117,32 @@ geo$Species <- "Artifact/Fossil"
 geoList <- unique(geo$Species)
 
 # sewage outflow
-ss <- readOGR("./data", layer = "SS_KC", GDAL1_integer64_policy = TRUE)
-ss$countCol <- ifelse(ss$MapFile == "Atlas", "green", "Grey")
+#ss <- readOGR("./data", layer = "SS_KC", GDAL1_integer64_policy = TRUE)
+ss <- read_sf(dsn = "./data", layer = "SS_KC")
+ss$countCol <- ifelse(ss$MapFile == "Atlas", "green", "black")
 ss$REF <- ifelse(ss$MapFile == "Atlas", "ICZM Atlas of Sig. Coastal & Marine Areas",
                  "Previous workshops")
-ss_proj <- spTransform(ss, "+proj=longlat +datum=WGS84")
+#ss_proj <- spTransform(ss, "+proj=longlat +datum=WGS84")
+ss_proj <- st_transform(ss, "+proj=longlat +datum=WGS84")
 
 #---importance & impact polygons
 imptList <- c("High", "Medium", "Low")
-zoneFxn <- function(new_col, old_col){
-  new_col <- ifelse(grepl("High", old_col), "High",
-                    ifelse(grepl("Med", old_col), "Medium", "Low"))
-}
-colCountFxn <- function(new_col, old_col){
-  new_col <- ifelse(old_col <= 4, "grey", 
-                    ifelse(old_col >= 10, "cyan", "blue"))
-}
+# zoneFxn <- function(new_col, old_col){
+#   new_col <- ifelse(grepl("High", old_col), "High",
+#                     ifelse(grepl("Med", old_col), "Medium", "Low"))
+# }
 
-polys <- readOGR("./data", layer = "all_overlap_polys", GDAL1_integer64_policy = TRUE)
+#polys <- readOGR("./data", layer = "all_overlap_polys_aug", GDAL1_integer64_policy = TRUE)
+polys <- read_sf(dsn = "./data", layer = "all_overlap_polys_aug")
+
 polys$Name <- as.character(polys$Name)
 polys$Name <- ifelse(polys$Name == "Med", "Medium", polys$Name)
-polys$countCol <- colCountFxn(polys$countCol, polys$COUNT_)
 polys$Zone <- polys$Name
 
-polys_proj <- spTransform(polys, "+proj=longlat +datum=WGS84")
+polys$countCol <- colCountFxn(polys$countCol, polys$COUNT_)
+
+#polys_proj <- spTransform(polys, "+proj=longlat +datum=WGS84")
+polys_proj <- st_transform(polys, "+proj=longlat +datum=WGS84")
 
 # msa 1a
 msa_1a <- polys_proj[polys_proj$Map_No == "MSA_1A", ]
@@ -163,11 +174,15 @@ rec$acts <- ifelse(rec$Map_No == "TCC_4A", "Kayaking/Canoeing/SUP",
 actList <- unique(rec$acts)
 
 #--- buffer
-buff <- readOGR("./data", layer = "all_buffers", GDAL1_integer64_policy = TRUE)
-buff_proj <- spTransform(buff, "+proj=longlat +datum=WGS84")
+# buff <- readOGR("./data", layer = "all_buffers", GDAL1_integer64_policy = TRUE)
+# buff_proj <- spTransform(buff, "+proj=longlat +datum=WGS84")
+
+buff <- read_sf(dsn = "./data", layer = "all_buffers")
+buff_proj <- st_transform(buff, "+proj=longlat +datum=WGS84")
+
 buffList <- unique(buff_proj$Buffer_Dis)
 
-#--- bath
+#--- bathymetry
 # bath <- readOGR("./data", layer = "bathCont", GDAL1_integer64_policy = TRUE)
 # bath_proj <- spTransform(bath, "+proj=longlat +datum=WGS84")
 # bathList <- unique(bath_proj$ID)
@@ -179,8 +194,11 @@ gmBath <- read.bathy("./data/marmap_coord_-60.5;46;-51;52.13_res_1.csv", header 
 
 gmRast <- marmap::as.raster(gmBath)
 
-nfld <- readOGR("./data", layer = "select_divs", GDAL1_integer64_policy = TRUE)
-nfld_proj <-  spTransform(nfld, "+proj=longlat +datum=WGS84")
+# nfld <- readOGR("./data", layer = "select_divs", GDAL1_integer64_policy = TRUE)
+# nfld_proj <-  spTransform(nfld, "+proj=longlat +datum=WGS84")
+
+nfld <- read_sf(dsn = "./data", layer = "select_divs")
+nfld_proj <- st_transform(nfld, "+proj=longlat +datum=WGS84")
 
 # remove land 
 gmMask <- mask(gmRast, nfld_proj)
