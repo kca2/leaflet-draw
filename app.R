@@ -31,8 +31,6 @@ colCountFxn <- function(new_col, old_col){
 spp$countCol <- colCountFxn(spp$countCol, spp$COUNT_)
 spp$countCol <- ifelse(spp$COUNT_ == 500, "green", spp$countCol)
 
-
-
 spp$parts <- ifelse(spp$COUNT_ == 500, 
                     "ICZM Atlas of Sig. Coastal & Marine Areas", 
                     spp$COUNT_)
@@ -211,6 +209,25 @@ gmMask[gmMask@data@values > 0] <- NA
 bPal <- colorNumeric(c("#0C2C84", "#41B6C4", "#FFFFCC"), values(gmMask), na.color = "transparent")
 
 #bPal <- colorNumeric(c("#06114f", "#710096", "#ffffcc"), values(gmMask), na.color = "transparent")
+
+#--- research locations
+# study <- read_sf(dsn = "./data", layer = "all_research_locs")
+# colnames(study)[c(2, 7:8, 14:15)] <- c("Date_Research_Conducted", "Author_Lead_Researcher", "Proper_Citation",
+#                                        "Common_Name", "MSA_Category")
+# study <- study %>% arrange(Category)
+# study_proj <- st_transform(study, "+proj=longlat +datum=WGS84")
+# studyList <- unique(study$Category)
+
+study <- read_sf(dsn = "./data", layer = "all_research_locs_edit")
+colnames(study)[c(8:9)] <- c("Common_Name", "MSA_Category")
+study <- study %>% arrange(Category)
+studyList <- unique(study$Category)
+study_proj <- st_transform(study, "+proj=longlat +datum=WGS84")
+
+
+overlap <- study %>% filter(!is.na(MSA_Category)) %>% arrange(MSA_Category)
+overlapList <- unique(overlap$MSA_Category)
+overlap_proj <- st_transform(overlap, "+proj=longlat +datum=WGS84")
 
 #---RRD
 # rrd <- readOGR("./data", layer = "RRD", GDAL1_integer64_policy = TRUE)
@@ -405,8 +422,22 @@ ui <- bootstrapPage(
                                  shinyjs::hidden(
                                    div(id = "buffDiv",
                                        checkboxGroupInput("buffCheck", NULL, choices = buffList))
+                                 ),
+                                 
+                                 helpText("All Research Locations"),
+                                 actionButton("studyButton", label = "Research Locations"),
+                                 shinyjs::hidden(
+                                   div(id = "studyDiv",
+                                       checkboxGroupInput("studyCheck", NULL, choices = studyList))
+                                 ),
+                                 
+                                 helpText("Research locations that have corresponding Circle & ID polygons"),
+                                 actionButton("overlapButton", label = "Research Locations/Circle & ID"),
+                                 shinyjs::hidden(
+                                   div(id = "overlapDiv",
+                                       checkboxGroupInput("overlapCheck", NULL, choices = overlapList))
                                  )
-                                 ) 
+                                 ) # end of Misc tab 
                         
                         ), # end of tabset panel 
             
@@ -414,6 +445,7 @@ ui <- bootstrapPage(
                      style = "padding-left:10px; padding-right:10px;",
                      actionButton("clearLyrs", "Clear All Displayed Layers")
                      ), # end clear all fluid row
+            
             fluidRow(tags$hr(),
                      style = "padding-left:10px; padding-right: 10px;",
                      helpText("To download user drawn polygon: "),
@@ -430,17 +462,16 @@ ui <- bootstrapPage(
                      helpText("Importance:"),
                      selectInput("zones", NULL, choices = c("High", "Med", "Low")),
                      downloadButton("dlshp", "Download polygon")
-                     
                      ) # end polygon d/l fluid row 
-          ), # end sidebar panel 
+            
+          ), # end sidebar panel
+          
           mainPanel(
             width = 6, 
             leafletOutput("map", height = 1000, width = 800))
         ) # end side bar layout 
         
         ) # end main div
-    
-
     
 ) # end ui
 
@@ -461,8 +492,7 @@ server <- function(input, output, session) {
                        primaryAreaUnit = "sqmeters",
                        position = "topleft") %>% 
             addDrawToolbar(rectangleOptions = FALSE,
-                           editOptions = editToolbarOptions(edit = FALSE,
-                                                            remove = TRUE),
+                           editOptions = editToolbarOptions(edit = FALSE, remove = TRUE),
                            polylineOptions = FALSE,
                            circleOptions = FALSE,
                            circleMarkerOptions = FALSE,
@@ -470,94 +500,22 @@ server <- function(input, output, session) {
  
     })
     
+    #--- toggle buttons 
+    catList <- c("comFish", "spawn", "fish", "sal", "bird", "sfish", "ais", "sar", 
+                 "mm", "habs", "scfc", "geo", "ss", "msa1a", "msa3a", "nmca",
+                 "tcc1a", "tcc2a", "rec", "bath", "buff", "study", "overlap")
     
-    observeEvent(input$comFishButton, {
-      shinyjs::toggle(id = "comFishDiv")
+    
+    lapply(catList, FUN = function(i){
+      observeEvent(input[[paste0(i, "Button")]], {
+        shinyjs::toggle(id = paste0(i, "Div"))
+      })
     })
     
-    observeEvent(input$spawnButton, {
-      shinyjs::toggle(id = "spawnDiv")
-    })
+    # observeEvent(input$comFishButton, {
+    #   shinyjs::toggle(id = "comFishDiv")
+    # })
 
-    observeEvent(input$fishButton, {
-      shinyjs::toggle(id = "fishDiv")
-    })
-
-    observeEvent(input$salButton, {
-      shinyjs::toggle(id = "salDiv")
-    })
-
-    observeEvent(input$birdButton, {
-      shinyjs::toggle(id = "birdDiv")
-    })
-
-    observeEvent(input$sfishButton, {
-      shinyjs::toggle(id = "sfishDiv")
-    })
-
-    observeEvent(input$aisButton, {
-      shinyjs::toggle(id = "aisDiv")
-    })
-
-    observeEvent(input$sarButton, {
-      shinyjs::toggle(id = "sarDiv")
-    })
-
-    observeEvent(input$mmButton, {
-      shinyjs::toggle(id = "mmDiv")
-    })
-
-    observeEvent(input$habsButton, {
-      shinyjs::toggle(id = "habsDiv")
-    })
-
-    observeEvent(input$scfcButton, {
-      shinyjs::toggle(id = "scfcDiv")
-    })
-
-    observeEvent(input$geoButton, {
-      shinyjs::toggle(id = "geoDiv")
-    })
-
-    observeEvent(input$ssButton, {
-      shinyjs::toggle(id = "ssDiv")
-    })
-
-    observeEvent(input$msa1aButton, {
-      shinyjs::toggle(id = "msa1aDiv")
-    })
-
-
-    observeEvent(input$msa3aButton, {
-      shinyjs::toggle(id = "msa3aDiv")
-    })
-
-    observeEvent(input$nmcaButton, {
-      shinyjs::toggle(id = "nmcaDiv")
-    })
-
-    observeEvent(input$tcc1aButton, {
-      shinyjs::toggle(id = "tcc1aDiv")
-    })
-
-    observeEvent(input$tcc2aButton, {
-      shinyjs::toggle(id = "tcc2aDiv")
-    })
-
-    observeEvent(input$recButton, {
-      shinyjs::toggle(id = "recDiv")
-    })
-
-    observeEvent(input$bathButton, {
-      shinyjs::toggle(id = "bathDiv")
-    })
-
-    observeEvent(input$buffButton, {
-      shinyjs::toggle(id = "buffDiv")
-    })
-
-
-    
     #---allow users to turn layers on/off 
     observe({
       
@@ -588,49 +546,55 @@ server <- function(input, output, session) {
 
       # #rrd_csub <- rrd_proj[rrd_proj$Energy %in% input$rrdCheck, ]
       # 
+      
+      sppPopFxn <- function(sppCol, partsCol){
+        spp_pop <- paste("Species: ", sppCol, "<br/>", "No. of Participants: ", partsCol)
+      }
+      
+      imptPopFxn <- function(imptPoly, zoneCol, countCol){
+        impt_pop <- paste(imptPoly, "<br /> Importance: ", zoneCol, "<br />", "No. of Participants: ", countCol)
+      }
+      
       leafletProxy("map") %>%
         
         clearShapes() %>%
         
-        addPolygons(data = comFish_csub, weight = 1, color = "grey", smoothFactor = 0.5,
+        # addPolygons(data = comFish_csub, weight = 1, color = "grey", smoothFactor = 0.5,
+        #             fillColor = comFish_csub$countCol,
+        #             popup = ~paste("Species: ", comFish_csub$Species, "<br/>",
+        #                            "No. of Participants: ", comFish_csub$parts)) %>% 
+        
+        addPolygons(data = comFish_csub, weight = 1, color = "grey", smoothFactor = 0.5, 
                     fillColor = comFish_csub$countCol,
-                    popup = ~paste("Species: ", comFish_csub$Species, "<br/>",
-                                   "No. of Participants: ", comFish_csub$parts)) %>% 
-
+                    popup = sppPopFxn(comFish_csub$Species, comFish_csub$parts)) %>%
+        
         addPolygons(data = spawn_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = spawn_csub$countCol,
-                    popup = ~paste("Species: ", spawn_csub$Species, "<br/>",
-                                   "No. of Participants: ", spawn_csub$parts)) %>% 
+                    popup = sppPopFxn(spawn_csub$Species, spawn_csub$parts)) %>% 
 
         addPolygons(data = fish_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = fish_csub$countCol,
-                    popup = ~paste("Species: ", fish_csub$Species, "<br/>",
-                                   "No. of Participants: ", fish_csub$parts)) %>% 
+                    popup = sppPopFxn(fish_csub$Species, fish_csub$parts)) %>% 
 
         addPolygons(data = bird_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = bird_csub$countCol,
-                    popup = ~paste("Species: ", bird_csub$Species, "<br/>",
-                                   "No. of Participants: ", bird_csub$parts)) %>%
+                    popup = sppPopFxn(bird_csub$Species, bird_csub$parts)) %>%
 
         addPolygons(data = sfish_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = sfish_csub$countCol,
-                    popup = ~paste("Species: ", sfish_csub$Species, "<br/>",
-                                   "No. of Participants: ", sfish_csub$parts)) %>%
+                    popup = sppPopFxn(sfish_csub$Species, sfish_csub$parts)) %>%
 
         addPolygons(data = ais_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = ais_csub$countCol,
-                    popup = ~paste("Species: ", ais_csub$Species, "<br/>",
-                                   "No. of Participants: ", ais_csub$parts)) %>%
+                    popup = sppPopFxn(ais_csub$Species, ais_csub$parts)) %>%
 
         addPolygons(data = sar_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = sar_csub$countCol,
-                    popup = ~paste("Species: ", sar_csub$Species, "<br/>",
-                                   "No. of Participants: ", sar_csub$parts)) %>%
+                    popup = sppPopFxn(sar_csub$Species, sar_csub$parts)) %>%
 
         addPolygons(data = mm_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = mm_csub$countCol,
-                    popup = ~paste("Species: ", mm_csub$Species, "<br/>",
-                                   "No. of Participants: ", mm_csub$parts)) %>%
+                    popup = sppPopFxn(mm_csub$Species, mm_csub$parts)) %>%
 
         addPolygons(data = habs_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = habs_csub$countCol,
@@ -649,28 +613,23 @@ server <- function(input, output, session) {
 
         addPolygons(data = msa1a_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = msa1a_csub$countCol,
-                    popup = ~paste("MSA 1A <br/> Importance: ", msa1a_csub$Zone, "<br/>",
-                                   "No. of Participants: ", msa1a_csub$COUNT_)) %>%
+                    popup = imptPopFxn("MSA 1A", msa1a_csub$Zone, msa1a_csub$COUNT_)) %>% 
 
         addPolygons(data = msa3a_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = msa3a_csub$countCol,
-                    popup = ~paste("MSA 3A <br/> Importance: ", msa3a_csub$Zone, "<br/>",
-                                   "No. of Participants: ", msa3a_csub$COUNT_)) %>%
-
+                    popup = imptPopFxn("MSA 3A", msa3a_csub$Zone, msa3a_csub$COUNT_)) %>% 
+        
         addPolygons(data = nmca_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = nmca_csub$countCol,
-                    popup = ~paste("MSA 4A <br/> NMCA Zone: ", nmca_csub$nmca_zone, "<br/>",
-                                   "No. of Participants: ", nmca_csub$COUNT_)) %>% 
+                    popup = imptPopFxn("MSA 4A", nmca_csub$nmca_zone, nmca_csub$COUNT_)) %>% 
 
         addPolygons(data = tcc1a_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = tcc1a_csub$countCol,
-                    popup = ~paste("TCC 1A <br/> Importance: ", tcc1a_csub$Zone, "<br/>",
-                                   "No. of Participants: ", tcc1a_csub$COUNT_)) %>%
+                    popup = imptPopFxn("TCC 1A", tcc1a_csub$Zone, tcc1a_csub$COUNT_)) %>% 
 
         addPolygons(data = tcc2a_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = tcc2a_csub$countCol,
-                    popup = ~paste("TCC 2A <br/> Importance: ", tcc2a_csub$Zone, "<br/>",
-                                   "No. of Participants: ", tcc2a_csub$COUNT_)) %>%
+                    popup = imptPopFxn("TCC 2A", tcc2a_csub$Zone, tcc2a_csub$COUNT_)) %>% 
 
         addPolygons(data = rec_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = rec_csub$countCol,
@@ -711,8 +670,20 @@ server <- function(input, output, session) {
                            popup = ~paste("Location: ", ss_proj$SiteName, "<br/>",
                                           "Source: ", ss_proj$REF))
       }
-
-
+      
+      study_csub <- study_proj[study_proj$Category %in% input$studyCheck, ]
+      prox %>% 
+        addCircleMarkers(data = study_csub, color = "grey", radius = 5,
+                         popup = ~paste("Category: ", study_csub$Category, "<br />",
+                                        "Taxonomic Class: ", study_csub$Class, "<br />",
+                                        "Common Name: ", study_csub$Common_Name))
+      
+      overlap_csub <- overlap_proj[overlap_proj$MSA_Category %in% input$overlapCheck, ]
+      prox %>% 
+        addCircleMarkers(data = overlap_csub, color = "grey", radius = 5,
+                         popup = ~paste("Category: ", overlap_csub$Category, "<br />",
+                                        "Taxonomic Class: ", overlap_csub$Class, "<br />",
+                                        "Common Name: ", overlap_csub$Common_Name))
 
     })
 
@@ -749,6 +720,8 @@ server <- function(input, output, session) {
       updateCheckboxGroupInput(session, "recCheck", choices = actList, selected = NULL)
       updateCheckboxInput(session, "bathCheck", value = FALSE)
       updateCheckboxGroupInput(session, "buffCheck", choices = buffList, selected = NULL)
+      updateCheckboxGroupInput(session, "studyCheck", choices = studyList, selected = NULL)
+      updateCheckboxGroupInput(session, "overlapCheck", choices = overlapList, selected = NULL)
     })
     
 
