@@ -7,7 +7,7 @@ library(leaflet.extras)
 library(tidyverse)
 library(sf) # reproject from UTM to WGS84
 library(shinyjs)
-library(rgdal) # to read in polygons
+#library(rgdal) # to read in polygons
 library(marmap) # get bathymetry data
 library(raster) # display bathymetry as raster 
 
@@ -55,16 +55,24 @@ spawn <- spp_proj[spp_proj$Species %in% spawnSpp, ]
 fishSpp <- c("Sunfish", "Swordfish")
 fish <- spp_proj[spp_proj$Species %in% fishSpp, ]
 
-# salmon
+# salmon - old file
 #salmon <- readOGR("./data", layer = "Salmonrivers_KC", GDAL1_integer64_policy = TRUE)
-salmon <- read_sf(dsn = "./data", layer = "Salmonrivers_KC")
-salmon$countCol <- ifelse(is.na(salmon$MapFile), "green", "black")
-salmon$SPECIES <- as.character(salmon$SPECIES)
-salmon$SPECIES <- ifelse(salmon$SPECIES == "Salmon & Sea Trout", "Salmon", salmon$SPECIES)
-salmon$REF <- ifelse(is.na(salmon$MapFile), "ICZM Atlas of Sig. Coastal & Marine Areas",
-                     "Previous workshops")
-#sal_proj <- spTransform(salmon, "+proj=longlat +datum=WGS84")
-sal_proj <- st_transform(salmon, "+proj=longlat +datum=WGS84")
+# salmon <- read_sf(dsn = "./data", layer = "Salmonrivers_KC")
+# salmon$countCol <- ifelse(is.na(salmon$MapFile), "green", "black")
+# salmon$SPECIES <- as.character(salmon$SPECIES)
+# salmon$SPECIES <- ifelse(salmon$SPECIES == "Salmon & Sea Trout", "Salmon", salmon$SPECIES)
+# salmon$REF <- ifelse(is.na(salmon$MapFile), "ICZM Atlas of Sig. Coastal & Marine Areas",
+#                      "Previous workshops")
+# #sal_proj <- spTransform(salmon, "+proj=longlat +datum=WGS84")
+# sal_proj <- st_transform(salmon, "+proj=longlat +datum=WGS84")
+
+# salmon & sea trout
+sal_trout <- read_sf(dsn = "./data", layer = "all_salmon_seatrout_aug")
+sal_trout$countCol <- ifelse(sal_trout$COUNT_ == 500, "green", "black")
+sal_trout$parts <- ifelse(sal_trout$COUNT_ == 500, "ICZM Atlas of Sig. Coastal & Marine Areas", sal_trout$COUNT_)
+
+sal_proj <- st_transform(sal_trout[sal_trout$SPECIES == "Salmon", ], "+proj=longlat +datum=WGS84")
+trout_proj <- st_transform(sal_trout[sal_trout$SPECIES == "Sea Trout", ], "+proj=longlat +datum=WGS84")
 
 # birds & nesting
 birdSpp <- c("Waterfowl Seabird", "Waterfowl Seabirds",
@@ -301,6 +309,12 @@ ui <- bootstrapPage(
                                        checkboxInput("salCheck", "Salmon", FALSE))
                                  ), tags$p(), 
                                  
+                                 actionButton("troutButton", label = "Sea Trout Rivers"),
+                                 shinyjs::hidden(
+                                   div(id = "troutDiv",
+                                       checkboxInput("troutCheck", "Sea Trout", FALSE))
+                                 ), tags$p(),
+                                 
                                  actionButton("birdButton", label = "Bird & Nesting Areas"),
                                  shinyjs::hidden(
                                    div(id = "birdDiv",
@@ -501,7 +515,7 @@ server <- function(input, output, session) {
     })
     
     #--- toggle buttons 
-    catList <- c("comFish", "spawn", "fish", "sal", "bird", "sfish", "ais", "sar", 
+    catList <- c("comFish", "spawn", "fish", "sal", "trout", "bird", "sfish", "ais", "sar", 
                  "mm", "habs", "scfc", "geo", "ss", "msa1a", "msa3a", "nmca",
                  "tcc1a", "tcc2a", "rec", "bath", "buff", "study", "overlap")
     
@@ -658,9 +672,15 @@ server <- function(input, output, session) {
       prox <- leafletProxy("map")
       prox %>% clearMarkers()
       if (input$salCheck){
-        prox %>% addCircleMarkers(data = sal_proj[sal_proj$SPECIES == "Salmon", ],
+        prox %>% addCircleMarkers(data = sal_proj,
                                   color = "grey", fillColor = sal_proj$countCol, radius = 5,
-                                  popup = ~paste("Source: ", sal_proj$REF))
+                                  popup = ~paste("No. of Participants: ", sal_proj$parts))
+      }
+      
+      if(input$troutCheck){
+        prox %>% addCircleMarkers(data = trout_proj,
+                                  color = "grey", fillColor = trout_proj$countCol, radius = 5,
+                                  popup = ~paste("No. of Participants: ", trout_proj$parts))
       }
 
       if(input$ssCheck){
@@ -704,6 +724,7 @@ server <- function(input, output, session) {
       updateCheckboxGroupInput(session, "spawnCheck", choices = spawnSpp, selected = NULL)
       updateCheckboxGroupInput(session, "fishCheck", choices = fishSpp, selected = NULL)
       updateCheckboxInput(session, "salCheck", value = FALSE)
+      updateCheckboxInput(session, "troutCheck", value = FALSE)
       updateCheckboxGroupInput(session, "birdCheck", choices = birdList, selected = NULL)
       updateCheckboxGroupInput(session, "sfishCheck", choices = sfishSpp, selected = NULL)
       updateCheckboxGroupInput(session, "aisCheck", choices = aisSpp, selected = NULL)
