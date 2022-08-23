@@ -7,7 +7,7 @@ library(leaflet.extras)
 library(tidyverse)
 library(sf) # reproject from UTM to WGS84
 library(shinyjs)
-#library(rgdal) # to read in polygons
+library(rgdal) # to read in polygons
 library(marmap) # get bathymetry data
 library(raster) # display bathymetry as raster 
 
