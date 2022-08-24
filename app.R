@@ -7,7 +7,6 @@ library(leaflet.extras)
 library(tidyverse)
 library(sf) # reproject from UTM to WGS84
 library(shinyjs)
-library(rgdal) # to read in polygons
 library(marmap) # get bathymetry data
 library(raster) # display bathymetry as raster 
 
@@ -17,7 +16,7 @@ options(warn = 0) # suppress empty polygon warnings
 # reproject data as needed & get names for each unique layer 
 ###############
 #--- circle & ID
-#spp <- readOGR("./data", layer = "all_spp_msa_aug", GDAL1_integer64_policy = TRUE)
+#spp <- rgdal::readOGR("./data", layer = "all_spp_msa_aug", GDAL1_integer64_policy = TRUE)
 spp <- read_sf(dsn = "./data", layer = "all_spp_msa_aug")
 
 spp$Species <- gsub("[[:punct:]]", " ", spp$Species) # remove special characters
@@ -158,9 +157,14 @@ msa_3a <- polys_proj[polys_proj$Map_No == "MSA_3A", ]
 
 # msa 4a
 # THIS IS == TCC_10A! 
-nmca <- polys_proj[polys_proj$Map_No == "TCC_10A", ]
-nmca$nmca_zone <- ifelse(nmca$Zone == "High", "Zone 1",
-                         ifelse(nmca$Zone == "Medium", "Zone 2", "Zone 3"))
+# nmca <- polys_proj[polys_proj$Map_No == "TCC_10A", ]
+# nmca$nmca_zone <- ifelse(nmca$Zone == "High", "Zone 1",
+#                          ifelse(nmca$Zone == "Medium", "Zone 2", "Zone 3"))
+# nmcaList <- c("Zone 1", "Zone 2", "Zone 3")
+
+nmca <- polys_proj[polys_proj$Map_No == "NMCA", ]
+nmca$nmca_zone <- ifelse(nmca$Name == "High", "Zone 1",
+                         ifelse(nmca$Zone == "Med", "Zone 2", "Zone 3"))
 nmcaList <- c("Zone 1", "Zone 2", "Zone 3")
 
 # tcc 1a
@@ -732,6 +736,7 @@ server <- function(input, output, session) {
       updateCheckboxGroupInput(session, "mmCheck", choices = mmList, selected = NULL)
       updateCheckboxGroupInput(session, "habsCheck", choices = habsSpp, selected = NULL)
       updateCheckboxGroupInput(session, "scfcCheck", choices = scfcSpp, selected = NULL)
+      updateCheckboxGroupInput(session, "geoCheck", choices = geoList, selected = NULL)
       updateCheckboxInput(session, "ssCheck", value = FALSE)
       updateCheckboxGroupInput(session, "msa1aCheck", choices = imptList, selected = NULL)
       updateCheckboxGroupInput(session, "msa3aCheck", choices = imptList, selected = NULL)

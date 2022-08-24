@@ -14,7 +14,6 @@ Depends:
     shiny,
     shinyjs,
     tidyverse,
-    rgdal, 
     marmap,
     raster
 Encoding: UTF-8
