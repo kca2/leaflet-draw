@@ -5,7 +5,7 @@ library(shiny)
 library(leaflet)
 library(leaflet.extras)
 library(tidyverse)
-library(sf) # reproject from UTM to WGS84
+library(sf) # read in SHP & reproject to WGS 84
 library(shinyjs)
 library(marmap) # get bathymetry data
 library(raster) # display bathymetry as raster 
@@ -41,18 +41,18 @@ spp_proj <- st_transform(spp, "+proj=longlat +datum=WGS84")
 spp_list <- unique(spp_proj$Species)
 
 # commercial fisheries
-comFishSpp <- c("Capelin", "Cod", "Crab", 
+comFishList <- c("Capelin", "Cod", "Crab", 
                  "Halibut", "Herring", "Lobster", "Mackerel", "Redfish", "Shrimp", "Smelt", 
                  "Snow Crab", "Squid", "Tuna", "Turbot")
-comFish <- spp_proj[spp_proj$Species %in% comFishSpp, ]
+comFish <- spp_proj[spp_proj$Species %in% comFishList, ]
 
 # spawning
-spawnSpp <- c("Capelin Spawning", "Herring Spawning", "Mackerel Spawning")
-spawn <- spp_proj[spp_proj$Species %in% spawnSpp, ]
+spawnList<- c("Capelin Spawning", "Herring Spawning", "Mackerel Spawning")
+spawn <- spp_proj[spp_proj$Species %in% spawnList, ]
 
 # regular fish
-fishSpp <- c("Sunfish", "Swordfish")
-fish <- spp_proj[spp_proj$Species %in% fishSpp, ]
+fishList <- c("Sunfish", "Swordfish")
+fish <- spp_proj[spp_proj$Species %in% fishList, ]
 
 # salmon - old file
 #salmon <- readOGR("./data", layer = "Salmonrivers_KC", GDAL1_integer64_policy = TRUE)
@@ -87,19 +87,19 @@ bird$Species <- ifelse(bird$Species == "Saltmarsh Goose Staging Area",
 birdList <- unique(bird$Species)
 
 # shellfish
-sfishSpp <- c("Clams", "Mussels", "Scallop", "Soft Shell Clam")
-sfish <- spp_proj[spp_proj$Species %in% sfishSpp, ]
+sfishList <- c("Clams", "Mussels", "Scallop", "Soft Shell Clam")
+sfish <- spp_proj[spp_proj$Species %in% sfishList, ]
 
 # ais
-aisSpp <- c("Coffin Box", "Golden Star Tunicate", "Green Crab", "Rainbow Trout")
-ais <- spp_proj[spp_proj$Species %in% aisSpp, ]
+aisList <- c("Coffin Box", "Golden Star Tunicate", "Green Crab", "Rainbow Trout")
+ais <- spp_proj[spp_proj$Species %in% aisList, ]
 
 #sar
-sarSpp <- c("American Eel", "American Marten", "Atlantic Wolffish", "Northern Wolffish", "Banded Killfish", 
+sarList <- c("American Eel", "American Marten", "Atlantic Wolffish", "Northern Wolffish", "Banded Killfish", 
             "Barrows Goldeneye", "Crowded Wormseed Mustard", "Goldeneye", "Griscombs Armica", "Harlequin Duck",
             "Ivory Gull", "Leatherback Turtle", "Mountain Fern", "Peregrine Falcon", "Piping Plover", "Red Knot",
             "Rusty Blackbird", "Short Eared Owl", "Woodland Caribou", "Wooly Arnica")
-sar <- spp_proj[spp_proj$Species %in% sarSpp, ]
+sar <- spp_proj[spp_proj$Species %in% sarList, ]
 
 # marine mammals
 mmSpp <- c("Bay Seals", "Seals", "Whale Dolphin")
@@ -108,12 +108,12 @@ mm$Species <- ifelse(mm$Species == "Whale Dolphin", "Whale/Dolphin", mm$Species)
 mmList <- unique(mm$Species)
 
 # significant marine habitats 
-habsSpp <- c("Eelgrass", "Saltmarsh")
-habs <- spp_proj[spp_proj$Species %in% habsSpp, ] # not those habs
+habsList <- c("Eelgrass", "Saltmarsh")
+habs <- spp_proj[spp_proj$Species %in% habsList, ] # not those habs
 
 # spawning collapse & fisheries closures
-scfcSpp <- c("Lobster Closure", "No Herring Spawning", "Snow Crab Closure")
-scfc <- spp_proj[spp_proj$Species %in% scfcSpp, ]
+scfcList <- c("Lobster Closure", "No Herring Spawning", "Snow Crab Closure")
+scfc <- spp_proj[spp_proj$Species %in% scfcList, ]
 
 # geological importance
 geoSpp <- c("Artifact Fossil")
@@ -140,9 +140,9 @@ imptList <- c("High", "Medium", "Low")
 #polys <- readOGR("./data", layer = "all_overlap_polys_aug", GDAL1_integer64_policy = TRUE)
 polys <- read_sf(dsn = "./data", layer = "all_overlap_polys_aug")
 
-polys$Name <- as.character(polys$Name)
-polys$Name <- ifelse(polys$Name == "Med", "Medium", polys$Name)
-polys$Zone <- polys$Name
+# polys$Name <- as.character(polys$Name)
+# polys$Name <- ifelse(polys$Name == "Med", "Medium", polys$Name)
+polys <- polys %>% mutate(Zone = ifelse(Name == "Med", "Medium", Name))
 
 polys$countCol <- colCountFxn(polys$countCol, polys$COUNT_)
 
@@ -163,8 +163,8 @@ msa_3a <- polys_proj[polys_proj$Map_No == "MSA_3A", ]
 # nmcaList <- c("Zone 1", "Zone 2", "Zone 3")
 
 nmca <- polys_proj[polys_proj$Map_No == "NMCA", ]
-nmca$nmca_zone <- ifelse(nmca$Name == "High", "Zone 1",
-                         ifelse(nmca$Zone == "Med", "Zone 2", "Zone 3"))
+nmca$nmca_zone <- ifelse(nmca$Name == "High", "Zone 1", 
+                         ifelse(nmca$Name == "Medium", "Zone 2", "Zone 3"))
 nmcaList <- c("Zone 1", "Zone 2", "Zone 3")
 
 # tcc 1a
@@ -236,7 +236,6 @@ study <- study %>% arrange(Category)
 studyList <- unique(study$Category)
 study_proj <- st_transform(study, "+proj=longlat +datum=WGS84")
 
-
 overlap <- study %>% filter(!is.na(MSA_Category)) %>% arrange(MSA_Category)
 overlapList <- unique(overlap$MSA_Category)
 overlap_proj <- st_transform(overlap, "+proj=longlat +datum=WGS84")
@@ -292,19 +291,19 @@ ui <- bootstrapPage(
                                  actionButton("comFishButton", label = "Commercial Fisheries"),
                                  shinyjs::hidden(
                                    div(id = "comFishDiv",
-                                       checkboxGroupInput("comFishCheck", NULL, choices = comFishSpp))
+                                       checkboxGroupInput("comFishCheck", NULL, choices = comFishList))
                                  ), tags$p(),  
                                  
                                  actionButton("spawnButton", label = "Spawning"),
                                  shinyjs::hidden(
                                    div(id = "spawnDiv",
-                                       checkboxGroupInput("spawnCheck", NULL, choices = spawnSpp))
+                                       checkboxGroupInput("spawnCheck", NULL, choices = spawnList))
                                  ), tags$p(), 
                                  
                                  actionButton("fishButton", label = "Non-commercial Fisheries"),
                                  shinyjs::hidden(
                                    div(id = "fishDiv",
-                                       checkboxGroupInput("fishCheck", NULL, choices = fishSpp))
+                                       checkboxGroupInput("fishCheck", NULL, choices = fishList))
                                  ), tags$p(), 
                                  
                                  actionButton("salButton", label = "Salmon Rivers"),
@@ -328,19 +327,19 @@ ui <- bootstrapPage(
                                  actionButton("sfishButton", label = "Shellfish"),
                                  shinyjs::hidden(
                                    div(id = "sfishDiv",
-                                       checkboxGroupInput("sfishCheck", NULL, choices = sfishSpp))
+                                       checkboxGroupInput("sfishCheck", NULL, choices = sfishList))
                                  ), tags$p(), 
                                  
                                  actionButton("aisButton", label = "AIS"),
                                  shinyjs::hidden(
                                    div(id = "aisDiv",
-                                       checkboxGroupInput("aisCheck", NULL, choices = aisSpp))
+                                       checkboxGroupInput("aisCheck", NULL, choices = aisList))
                                  ),
                                  
                                  actionButton("sarButton", label = "SAR"),
                                  shinyjs::hidden(
                                    div(id = "sarDiv",
-                                       checkboxGroupInput("sarCheck", NULL, choices = sarSpp))
+                                       checkboxGroupInput("sarCheck", NULL, choices = sarList))
                                  ), tags$p(), 
                                  
                                  actionButton("mmButton", label = "Marine Mammals"),
@@ -352,13 +351,13 @@ ui <- bootstrapPage(
                                  actionButton("habsButton", label = "Sig. Marine Habitats"),
                                  shinyjs::hidden(
                                    div(id = "habsDiv",
-                                       checkboxGroupInput("habsCheck", NULL, choices = habsSpp))
+                                       checkboxGroupInput("habsCheck", NULL, choices = habsList))
                                  ), tags$p(), 
                                  
                                  actionButton("scfcButton", label = "Collapse/Closures"),
                                  shinyjs::hidden(
                                    div(id = "scfcDiv",
-                                       checkboxGroupInput("scfcCheck", NULL, choices = scfcSpp))
+                                       checkboxGroupInput("scfcCheck", NULL, choices = scfcList))
                                  ), tags$p(), 
                                  
                                  actionButton("geoButton", label = "Geologically Important"),
@@ -724,18 +723,18 @@ server <- function(input, output, session) {
     
     # allow users to clear all layers displayed
     observeEvent(input$clearLyrs, {
-      updateCheckboxGroupInput(session, "comFishCheck", choices = comFishSpp, selected = NULL)
-      updateCheckboxGroupInput(session, "spawnCheck", choices = spawnSpp, selected = NULL)
-      updateCheckboxGroupInput(session, "fishCheck", choices = fishSpp, selected = NULL)
+      updateCheckboxGroupInput(session, "comFishCheck", choices = comFishList, selected = NULL)
+      updateCheckboxGroupInput(session, "spawnCheck", choices = spawnList, selected = NULL)
+      updateCheckboxGroupInput(session, "fishCheck", choices = fishList, selected = NULL)
       updateCheckboxInput(session, "salCheck", value = FALSE)
       updateCheckboxInput(session, "troutCheck", value = FALSE)
       updateCheckboxGroupInput(session, "birdCheck", choices = birdList, selected = NULL)
-      updateCheckboxGroupInput(session, "sfishCheck", choices = sfishSpp, selected = NULL)
-      updateCheckboxGroupInput(session, "aisCheck", choices = aisSpp, selected = NULL)
-      updateCheckboxGroupInput(session, "sarCheck", choices = sarSpp, selected = NULL)
+      updateCheckboxGroupInput(session, "sfishCheck", choices = sfishList, selected = NULL)
+      updateCheckboxGroupInput(session, "aisCheck", choices = aisList, selected = NULL)
+      updateCheckboxGroupInput(session, "sarCheck", choices = sarList, selected = NULL)
       updateCheckboxGroupInput(session, "mmCheck", choices = mmList, selected = NULL)
-      updateCheckboxGroupInput(session, "habsCheck", choices = habsSpp, selected = NULL)
-      updateCheckboxGroupInput(session, "scfcCheck", choices = scfcSpp, selected = NULL)
+      updateCheckboxGroupInput(session, "habsCheck", choices = habsList, selected = NULL)
+      updateCheckboxGroupInput(session, "scfcCheck", choices = scfcList, selected = NULL)
       updateCheckboxGroupInput(session, "geoCheck", choices = geoList, selected = NULL)
       updateCheckboxInput(session, "ssCheck", value = FALSE)
       updateCheckboxGroupInput(session, "msa1aCheck", choices = imptList, selected = NULL)
