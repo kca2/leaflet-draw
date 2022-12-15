@@ -163,8 +163,8 @@ msa_3a <- polys_proj[polys_proj$Map_No == "MSA_3A", ]
 # nmcaList <- c("Zone 1", "Zone 2", "Zone 3")
 
 nmca <- polys_proj[polys_proj$Map_No == "NMCA", ]
-nmca$nmca_zone <- ifelse(nmca$Name == "High", "Zone 1", 
-                         ifelse(nmca$Name == "Medium", "Zone 2", "Zone 3"))
+nmca$nmca_zone <- ifelse(nmca$Zone == "High", "Zone 1", 
+                         ifelse(nmca$Zone == "Medium", "Zone 2", "Zone 3"))
 nmcaList <- c("Zone 1", "Zone 2", "Zone 3")
 
 # tcc 1a
