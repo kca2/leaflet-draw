@@ -15,6 +15,7 @@ Depends:
     shinyjs,
     tidyverse,
     marmap,
-    raster
+    raster,
+    leaflet.esri
 Encoding: UTF-8
 LazyData: true

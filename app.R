@@ -8,7 +8,8 @@ library(tidyverse)
 library(sf) # read in SHP & reproject to WGS 84
 library(shinyjs)
 library(marmap) # get bathymetry data
-library(raster) # display bathymetry as raster 
+library(raster) # display bathymetry as raster
+library(leaflet.esri) # esri REST
 
 options(warn = 0) # suppress empty polygon warnings 
 
@@ -28,7 +29,7 @@ colCountFxn <- function(new_col, old_col){
 }
 
 spp$countCol <- colCountFxn(spp$countCol, spp$COUNT_)
-spp$countCol <- ifelse(spp$COUNT_ == 500, "green", spp$countCol)
+spp$countCol <- ifelse(spp$COUNT_ == 500, "red", spp$countCol)
 
 spp$parts <- ifelse(spp$COUNT_ == 500, 
                     "ICZM Atlas of Sig. Coastal & Marine Areas", 
@@ -67,7 +68,7 @@ fish <- spp_proj[spp_proj$Species %in% fishList, ]
 
 # salmon & sea trout
 sal_trout <- read_sf(dsn = "./data", layer = "all_salmon_seatrout_aug")
-sal_trout$countCol <- ifelse(sal_trout$COUNT_ == 500, "green", "black")
+sal_trout$countCol <- ifelse(sal_trout$COUNT_ == 500, "red", "black")
 sal_trout$parts <- ifelse(sal_trout$COUNT_ == 500, "ICZM Atlas of Sig. Coastal & Marine Areas", sal_trout$COUNT_)
 
 sal_proj <- st_transform(sal_trout[sal_trout$SPECIES == "Salmon", ], "+proj=longlat +datum=WGS84")
@@ -124,7 +125,7 @@ geoList <- unique(geo$Species)
 # sewage outflow
 #ss <- readOGR("./data", layer = "SS_KC", GDAL1_integer64_policy = TRUE)
 ss <- read_sf(dsn = "./data", layer = "SS_KC")
-ss$countCol <- ifelse(ss$MapFile == "Atlas", "green", "black")
+ss$countCol <- ifelse(ss$MapFile == "Atlas", "red", "black")
 ss$REF <- ifelse(ss$MapFile == "Atlas", "ICZM Atlas of Sig. Coastal & Marine Areas",
                  "Previous workshops")
 #ss_proj <- spTransform(ss, "+proj=longlat +datum=WGS84")
@@ -189,7 +190,6 @@ actList <- unique(rec$acts)
 
 buff <- read_sf(dsn = "./data", layer = "all_buffers")
 buff_proj <- st_transform(buff, "+proj=longlat +datum=WGS84")
-
 buffList <- unique(buff_proj$Buffer_Dis)
 
 #--- bathymetry
@@ -252,6 +252,21 @@ overlap_proj <- st_transform(overlap, "+proj=longlat +datum=WGS84")
 # Empty SpatialPolygonsDataFrame warning when no options are selected 
 # 8C979A
 ###############
+
+groupCheckFxn <- function(df, dfChoices){
+  shinyjs::hidden(
+    div(id = paste0(df, "Div"),
+        checkboxGroupInput(inputId = paste0(df, "Check"), NULL, choices = dfChoices))
+  )
+}
+
+checkFxn <- function(df, dfLabel){
+  shinyjs::hidden(
+    div(id = paste0(df, "Div"),
+        checkboxInput(inputId = paste0(df, "Check"), label = dfLabel))
+  )
+}
+
 ui <- bootstrapPage(
     tags$head(
       tags$style(HTML(
@@ -289,172 +304,138 @@ ui <- bootstrapPage(
                         tabPanel("Circle & Identify",
                                  tags$hr(),
                                  actionButton("comFishButton", label = "Commercial Fisheries"),
-                                 shinyjs::hidden(
-                                   div(id = "comFishDiv",
-                                       checkboxGroupInput("comFishCheck", NULL, choices = comFishList))
-                                 ), tags$p(),  
+                                 groupCheckFxn("comFish", comFishList), tags$p(),  
                                  
                                  actionButton("spawnButton", label = "Spawning"),
-                                 shinyjs::hidden(
-                                   div(id = "spawnDiv",
-                                       checkboxGroupInput("spawnCheck", NULL, choices = spawnList))
-                                 ), tags$p(), 
+                                 groupCheckFxn("spawn", spawnList), tags$p(), 
                                  
                                  actionButton("fishButton", label = "Non-commercial Fisheries"),
-                                 shinyjs::hidden(
-                                   div(id = "fishDiv",
-                                       checkboxGroupInput("fishCheck", NULL, choices = fishList))
-                                 ), tags$p(), 
+                                 groupCheckFxn("fish", fishList), tags$p(), 
                                  
                                  actionButton("salButton", label = "Salmon Rivers"),
-                                 shinyjs::hidden(
-                                   div(id = "salDiv",
-                                       checkboxInput("salCheck", "Salmon", FALSE))
-                                 ), tags$p(), 
+                                 checkFxn("sal", "Salmon"), tags$p(),
                                  
                                  actionButton("troutButton", label = "Sea Trout Rivers"),
-                                 shinyjs::hidden(
-                                   div(id = "troutDiv",
-                                       checkboxInput("troutCheck", "Sea Trout", FALSE))
-                                 ), tags$p(),
+                                 checkFxn("trout", "Sea Trout"), tags$p(),
                                  
                                  actionButton("birdButton", label = "Bird & Nesting Areas"),
-                                 shinyjs::hidden(
-                                   div(id = "birdDiv",
-                                       checkboxGroupInput("birdCheck", NULL, choices = birdList))
-                                 ), tags$p(), 
+                                 groupCheckFxn("bird", birdList), tags$p(), 
                                  
                                  actionButton("sfishButton", label = "Shellfish"),
-                                 shinyjs::hidden(
-                                   div(id = "sfishDiv",
-                                       checkboxGroupInput("sfishCheck", NULL, choices = sfishList))
-                                 ), tags$p(), 
+                                 groupCheckFxn("sfish", sfishList), tags$p(), 
                                  
                                  actionButton("aisButton", label = "AIS"),
-                                 shinyjs::hidden(
-                                   div(id = "aisDiv",
-                                       checkboxGroupInput("aisCheck", NULL, choices = aisList))
-                                 ),
+                                 groupCheckFxn("ais", aisList),
                                  
                                  actionButton("sarButton", label = "SAR"),
-                                 shinyjs::hidden(
-                                   div(id = "sarDiv",
-                                       checkboxGroupInput("sarCheck", NULL, choices = sarList))
-                                 ), tags$p(), 
+                                 groupCheckFxn("sar", sarList), tags$p(), 
                                  
                                  actionButton("mmButton", label = "Marine Mammals"),
-                                 shinyjs::hidden(
-                                   div(id = "mmDiv",
-                                       checkboxGroupInput("mmCheck", NULL, choices = mmList))
-                                 ), tags$p(), 
+                                 groupCheckFxn("mm", mmList), tags$p(), 
                                  
                                  actionButton("habsButton", label = "Sig. Marine Habitats"),
-                                 shinyjs::hidden(
-                                   div(id = "habsDiv",
-                                       checkboxGroupInput("habsCheck", NULL, choices = habsList))
-                                 ), tags$p(), 
+                                 groupCheckFxn("habs", habsList), tags$p(), 
                                  
                                  actionButton("scfcButton", label = "Collapse/Closures"),
-                                 shinyjs::hidden(
-                                   div(id = "scfcDiv",
-                                       checkboxGroupInput("scfcCheck", NULL, choices = scfcList))
-                                 ), tags$p(), 
+                                 groupCheckFxn("scfc", scfcList), tags$p(), 
                                  
                                  actionButton("geoButton", label = "Geologically Important"),
-                                 shinyjs::hidden(
-                                   div(id = "geoDiv",
-                                       checkboxGroupInput("geoCheck", NULL, choices = geoList))
-                                 ), tags$p(),  
+                                 groupCheckFxn("geo", geoList), tags$p(),  
                                  
                                  actionButton("ssButton", label = "Sewage Outflows"),
-                                 shinyjs::hidden(
-                                   div(id = "ssDiv",
-                                       checkboxInput("ssCheck", "Sewage", FALSE))
-                                 ), br()
-                                 
-                                 # tags$hr(),
-                                 # actionButton("clearCircle", label = "Clear All Circle & Identify"),
-                                 # br()
-                                 
+                                 checkFxn("ss", "Sewage"), br()
                                  ), # end of circle & ID tab
                         
                         tabPanel("MSA",
                                  tags$hr(), 
                                  helpText("MSA 1A - Important areas for commercial & recreational fisheries"),
                                  actionButton("msa1aButton", label = "Importance"),
-                                 shinyjs::hidden(
-                                   div(id = "msa1aDiv",
-                                       checkboxGroupInput("msa1aCheck", NULL, choices = imptList))
-                                 ),
+                                 groupCheckFxn("msa1a", imptList), 
                                  
                                  helpText("MSA 3A - Important areas for research"),
                                  actionButton("msa3aButton", label = "Importance"),
-                                 shinyjs::hidden(
-                                   div(id = "msa3aDiv",
-                                       checkboxGroupInput("msa3aCheck", NULL, choices = imptList))
-                                 ),
+                                 groupCheckFxn("msa3a", imptList),
                                  
                                  helpText("MSA 4A - NMCA zones"),
                                  actionButton("nmcaButton", label = "Zones"),
-                                 shinyjs::hidden(
-                                   div(id = "nmcaDiv",
-                                       checkboxGroupInput("nmcaCheck", NULL, choices = nmcaList))
-                                 )
+                                 groupCheckFxn("nmca", nmcaList)
                                  ), # end of MSA tab 
                         
                         tabPanel("TCC",
                                  tags$hr(), 
                                  helpText("TCC 1A - Socially important areas"),
                                  actionButton("tcc1aButton", label = " Importance"),
-                                 shinyjs::hidden(
-                                   div(id = "tcc1aDiv",
-                                       checkboxGroupInput("tcc1aCheck", NULL, choices = imptList))
-                                 ),
+                                 groupCheckFxn("tcc1a", imptList),
                                  
                                  helpText("TCC 2A - Socially important viewsheds"),
                                  actionButton("tcc2aButton", label = "Importance"),
-                                 shinyjs::hidden(
-                                   div(id = "tcc2aDiv",
-                                       checkboxGroupInput("tcc2aCheck", NULL, choices = imptList))
-                                 ),
+                                 groupCheckFxn("tcc2a", imptList),
                                  
                                  helpText("TCC 4A:8A - Important recreation areas"),
                                  actionButton("recButton", label = "Activities"),
-                                 shinyjs::hidden(
-                                   div(id = "recDiv",
-                                       checkboxGroupInput("recCheck", NULL, choices = actList))
-                                 )
+                                 groupCheckFxn("rec", actList)
                                  ), # end of TCC tab
+                        
                         tabPanel("Misc.",
                                  tags$hr(), 
                                  helpText("Bathymetry"),
                                  actionButton("bathButton", label = "Bathymetry (m)"),
-                                 shinyjs::hidden(
-                                   div(id = "bathDiv",
-                                       checkboxInput("bathCheck", "Bathymetry", FALSE))
-                                 ),
+                                 checkFxn("bath", "Bathymetry"),
                                  
                                  helpText("Buffer"),
                                  actionButton("buffButton", label = "Distance from National Park Boundary (km)"),
-                                 shinyjs::hidden(
-                                   div(id = "buffDiv",
-                                       checkboxGroupInput("buffCheck", NULL, choices = buffList))
-                                 ),
+                                 groupCheckFxn("buff", buffList),
                                  
                                  helpText("All Research Locations"),
                                  actionButton("studyButton", label = "Research Locations"),
-                                 shinyjs::hidden(
-                                   div(id = "studyDiv",
-                                       checkboxGroupInput("studyCheck", NULL, choices = studyList))
-                                 ),
+                                 groupCheckFxn("study", studyList),
                                  
                                  helpText("Research locations that have corresponding Circle & ID polygons"),
                                  actionButton("overlapButton", label = "Research Locations/Circle & ID"),
-                                 shinyjs::hidden(
-                                   div(id = "overlapDiv",
-                                       checkboxGroupInput("overlapCheck", NULL, choices = overlapList))
-                                 )
-                                 ) # end of Misc tab 
+                                 groupCheckFxn("overlap", overlapList)
+                                 ), # end of Misc tab
+                        
+                        tabPanel("Gov.",
+                                 tags$hr(),
+                                 tags$b("The data in this tab is from the Open Government Portal and accessed under the 
+                                 following license: https://open.canada.ca/en/open-government-licence-canada"), 
+                                 tags$p(),
+                                 
+                                 actionButton("ebsaButton", label = "Ecologically or Biologically Sig. Marine Areas"),
+                                 checkFxn("ebsa", "EBSAs"), tags$p(),
+                                 
+                                 actionButton("sharButton", label = "Shellfish Harvest Area Classification"),
+                                 #groupCheckFxn("shar", sharList)
+                                 checkFxn("shar", "Shellfish Harvest Areas"), tags$p(),
+                                 
+                                 actionButton("spongeButton", label = "Sponge Fields in the Gulf"),
+                                 checkFxn("sponge", "Sponge Fields"), tags$p(),
+                                 
+                                 actionButton("martenButton", label = "American Marten Critical Habitat"),
+                                 checkFxn("marten", "American Marten Habitat"), tags$p(),
+                                 
+                                 actionButton("ploverButton", label = "Piping Plover Critical Habitat"),
+                                 checkFxn("plover", "Piping Plover Habitat"), tags$p(),
+                                 
+                                 helpText("Harp Seal Distribution: do not use this lyr - unstable atm"),
+                                 actionButton("harpButton", label = "Harp Seal Distribution"),
+                                 checkFxn("harp", "Harp Seal Distribution"), tags$p(),
+                                 
+                                 helpText("Blue Whale Areas: do not use this lyr - unstable atm"),
+                                 actionButton("whaleButton", label = "Blue Whale Migration and Feeding Areas"),
+                                 checkFxn("whale", "Blue Whale Areas"), tags$p(),
+                                 
+                                 actionButton("shoreButton", label = "Atlantic Shoreline Classification"),
+                                 checkFxn("shore", "Shoreline Classification"), tags$p(),
+                      
+                                 actionButton("wasteButton", label = "Wastewater Treatment"),
+                                 checkFxn("waste", "Wastewater Treatment"), tags$p(),
+                                 
+                                 actionButton("calanusButton", label = "Calanus spp. size & lipid content metrics"),
+                                 checkFxn("calanus", "Calanus spp."), tags$p()
+                                 
+                                 
+                                 ) # end of Gov tab
                         
                         ), # end of tabset panel 
             
@@ -520,7 +501,9 @@ server <- function(input, output, session) {
     #--- toggle buttons 
     catList <- c("comFish", "spawn", "fish", "sal", "trout", "bird", "sfish", "ais", "sar", 
                  "mm", "habs", "scfc", "geo", "ss", "msa1a", "msa3a", "nmca",
-                 "tcc1a", "tcc2a", "rec", "bath", "buff", "study", "overlap")
+                 "tcc1a", "tcc2a", "rec", "bath", "buff", "study", "overlap", 
+                 "ebsa", "shar", "sponge", "marten", "plover", "harp", "whale",
+                 "shore", "waste", "calanus")
     
     
     lapply(catList, FUN = function(i){
@@ -721,13 +704,96 @@ server <- function(input, output, session) {
         }
     })
     
+    # allow users to turn gov. layers on/off
+    observe({
+      chab = "https://maps-cartes.ec.gc.ca/arcgis/rest/services/CriticalHabitatAlanticHabitatEnPerilAtlantique/MapServer/"
+      oilhab = "https://gisp.dfo-mpo.gc.ca/arcgis/rest/services/FGP/Biological_Sensitivity_Mapping_Oil_Spill_Planning_Response_Quebec_Region_en/MapServer/"
+      
+      prox <- leafletProxy("map")
+      prox %>% clearGeoJSON()
+      
+      if(input$ebsaCheck){
+        prox %>% addEsriFeatureLayer(url = "https://gisp.dfo-mpo.gc.ca/arcgis/rest/services/FGP/Ecologically_or_Biologically_Significant_Marine_Areas_Newfoundland_and_Labrador/MapServer/0",
+                                    color = "red")
+      }
+      
+      if(input$sharCheck){
+        prox %>% addEsriFeatureLayer(url = "https://maps-cartes.ec.gc.ca/arcgis/rest/services/Shellfish_Classification_Mollusques/MapServer/5",
+                                     useServiceSymbology = TRUE, labelProperty = "class_en", color = "red",
+                                     featureLayerOptions(where = "province = 'NL'"))
+      }
+      
+      if(input$spongeCheck){
+        prox %>% addEsriFeatureLayer(url = "https://gisp.dfo-mpo.gc.ca/arcgis/rest/services/FGP/CSAS_Corals_Sponges_2010_EN/MapServer/10",
+                                     color = "red")
+      }
+      
+      if(input$martenCheck){
+        prox %>% addEsriFeatureLayer(url = paste0(chab, "14"), color = "red")
+      }
+      
+      
+      if(input$ploverCheck){
+        prox %>% addEsriFeatureLayer(url = paste0(chab, "3"), useServiceSymbology = TRUE, 
+                                     featureLayerOptions(where = "Province = 'NL'"),
+                                     markerType = "circleMarker", markerOptions = leaflet::markerOptions(radius = 5, color = "red"), 
+                                     labelProperty = "Beach_Name")
+      }
+      
+      # if(input$harpCheck){
+      #   prox %>% addEsriFeatureLayer(url = paste0(oilhab, "14"), color = "red")
+      # }
+      # 
+      # if(input$whaleCheck){
+      #   prox %>% addEsriFeatureLayer(url = paste0(oilhab, "16"), color = "red")
+      # }
+      
+      if(input$shoreCheck){
+        prox %>% addEsriFeatureLayer(url = "https://ec.gc.ca/arcgis/rest/services/EPB_EPO/ShorelineSegmentationWithSCATClassification/MapServer/4",
+                                     color = "red", labelProperty = "SCAT_Class_EN")
+      }
+      
+      if(input$wasteCheck){
+        prox %>% addEsriFeatureLayer(url = "https://maps-cartes.ec.gc.ca/arcgis/rest/services/DMS/Type_de_Traitement_Treatment_Type/MapServer/0",
+                                     useServiceSymbology = TRUE, 
+                                     featureLayerOptions(where = "Province_EN = 'Newfoundland and Labrador'"),
+                                     markerType = "circleMarker", markerOptions = leaflet::markerOptions(radius = 5, color = "red"),
+                                     labelProperty = "Treatment_Types")
+      }
+      
+      if(input$calanusCheck){
+        prox %>% addEsriFeatureLayer(url = "https://gisp.dfo-mpo.gc.ca/arcgis/rest/services/FGP/Calanus_spp_Size_and_Lipid_Content_Metrics_in_North_Atlantic_1977_2019/MapServer/0",
+                                     useServiceSymbology = TRUE,
+                                     markerType = "circleMarker", markerOptions = leaflet::markerOptions(radius = 5, color = "red"),
+                                     labelProperty = "Species")
+      }
+      
+      
+    })
+    
     # allow users to clear all layers displayed
+    checkList <- c("sal", "trout", "ss", "bath", 
+                   "ebsa", "shar", "sponge", "marten", "plover", "harp", "whale",
+                   "shore", "waste", "calanus")
+    lapply(checkList, FUN = function(i){
+      observeEvent(input$clearLyrs, {
+        updateCheckboxInput(session = session, inputId = paste0(i, "Check"), value = FALSE)
+      })
+    })
+    
+    groupImptList <- c("msa1a", "msa3a", "tcc1a", "tcc2a")
+    lapply(groupImptList, FUN = function(i){
+      observeEvent(input$clearLyrs, {
+        updateCheckboxGroupInput(session = session, inputId = paste0(i, "Check"), choices = imptList, selected = NULL)
+      })
+    })
+    
+    
+    
     observeEvent(input$clearLyrs, {
       updateCheckboxGroupInput(session, "comFishCheck", choices = comFishList, selected = NULL)
       updateCheckboxGroupInput(session, "spawnCheck", choices = spawnList, selected = NULL)
       updateCheckboxGroupInput(session, "fishCheck", choices = fishList, selected = NULL)
-      updateCheckboxInput(session, "salCheck", value = FALSE)
-      updateCheckboxInput(session, "troutCheck", value = FALSE)
       updateCheckboxGroupInput(session, "birdCheck", choices = birdList, selected = NULL)
       updateCheckboxGroupInput(session, "sfishCheck", choices = sfishList, selected = NULL)
       updateCheckboxGroupInput(session, "aisCheck", choices = aisList, selected = NULL)
@@ -736,19 +802,13 @@ server <- function(input, output, session) {
       updateCheckboxGroupInput(session, "habsCheck", choices = habsList, selected = NULL)
       updateCheckboxGroupInput(session, "scfcCheck", choices = scfcList, selected = NULL)
       updateCheckboxGroupInput(session, "geoCheck", choices = geoList, selected = NULL)
-      updateCheckboxInput(session, "ssCheck", value = FALSE)
-      updateCheckboxGroupInput(session, "msa1aCheck", choices = imptList, selected = NULL)
-      updateCheckboxGroupInput(session, "msa3aCheck", choices = imptList, selected = NULL)
       updateCheckboxGroupInput(session, "nmcaCheck", choices = nmcaList, selected = NULL)
-      updateCheckboxGroupInput(session, "tcc1aCheck", choices = imptList, selected = NULL)
-      updateCheckboxGroupInput(session, "tcc2aCheck", choices = imptList, selected = NULL)
       updateCheckboxGroupInput(session, "recCheck", choices = actList, selected = NULL)
-      updateCheckboxInput(session, "bathCheck", value = FALSE)
       updateCheckboxGroupInput(session, "buffCheck", choices = buffList, selected = NULL)
       updateCheckboxGroupInput(session, "studyCheck", choices = studyList, selected = NULL)
       updateCheckboxGroupInput(session, "overlapCheck", choices = overlapList, selected = NULL)
     })
-    
+
 
     output$dlshp <- downloadHandler(
         # filename = function() {
