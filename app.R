@@ -82,7 +82,7 @@ bird <- spp_proj[spp_proj$Species %in% birdSpp, ]
 bird$Species <- ifelse(bird$Species == "Waterfowl Seabird" | bird$Species == "Waterfowl Seabirds",
                        "Waterfowl/Seabirds", bird$Species)
 bird$Species <- ifelse(bird$Species == "Waterfowl Spp   Seabirds Nesting",
-                       "Waterfowl Spp & Seabirds Nesting", bird$Species)
+                       "Waterfowl/Seabirds Nesting", bird$Species)
 bird$Species <- ifelse(bird$Species == "Saltmarsh Goose Staging Area",
                        "Goose Staging Area", bird$Species)
 birdList <- unique(bird$Species)
@@ -95,7 +95,7 @@ sfish <- spp_proj[spp_proj$Species %in% sfishList, ]
 aisList <- c("Coffin Box", "Golden Star Tunicate", "Green Crab", "Rainbow Trout")
 ais <- spp_proj[spp_proj$Species %in% aisList, ]
 
-#sar
+#sar - Griscombs Armica is a misspelling 
 sarList <- c("American Eel", "American Marten", "Atlantic Wolffish", "Northern Wolffish", "Banded Killfish", 
             "Barrows Goldeneye", "Crowded Wormseed Mustard", "Goldeneye", "Griscombs Armica", "Harlequin Duck",
             "Ivory Gull", "Leatherback Turtle", "Mountain Fern", "Peregrine Falcon", "Piping Plover", "Red Knot",
@@ -239,6 +239,24 @@ study_proj <- st_transform(study, "+proj=longlat +datum=WGS84")
 overlap <- study %>% filter(!is.na(MSA_Category)) %>% arrange(MSA_Category)
 overlapList <- unique(overlap$MSA_Category)
 overlap_proj <- st_transform(overlap, "+proj=longlat +datum=WGS84")
+
+
+# ahoi --------------------------------------------------------------------
+ahoiSpp <- read_sf(dsn = "./data", layer = "ahoi_spp_pts")
+ahoiSppList <- unique(ahoiSpp$Legend)
+ahoiSpp_proj <- st_transform(ahoiSpp, "+proj=longlat +datum=WGS84")
+
+ahoiPolys <- read_sf(dsn = "./data", layer = "ahoi_polys_diss")
+ahoiPolysList <- unique(ahoiPolys$Colour)
+ahoiPolys <- ahoiPolys %>% 
+  mutate(parts = case_when(Bin == 1 ~ "1 - 4",
+                           Bin == 3 ~ "10+",
+                           TRUE ~ "5 - 9"))
+ahoiPolys_proj <- st_transform(ahoiPolys, "+proj=longlat +datum=WGS84")
+
+ahoiOthers <- read_sf(dsn = "./data", layer = "ahoi_other_polys")
+ahoiOthersList <- unique(ahoiOthers$Legend)
+ahoiOthers_proj <- st_transform(ahoiOthers, "+proj=longlat +datum=WGS84")
 
 #---RRD
 # rrd <- readOGR("./data", layer = "RRD", GDAL1_integer64_policy = TRUE)
@@ -435,7 +453,19 @@ ui <- bootstrapPage(
                                  checkFxn("calanus", "Calanus spp."), tags$p()
                                  
                                  
-                                 ) # end of Gov tab
+                                 ), # end of Gov tab
+                        tabPanel("AHOI",
+                                 tags$hr(),
+                                 actionButton("ahoiSppButton", label = "C&I Species Points"),
+                                 groupCheckFxn("ahoiSpp", ahoiSppList), tags$p(),
+                                 
+                                 actionButton("ahoiPolysButton", label = "MSA & TCC Dissolved by Count Polygons"),
+                                 groupCheckFxn("ahoiPolys", ahoiPolysList), tags$p(),
+                                 
+                                 actionButton("ahoiOthersButton", label = "Species Polygons"),
+                                 groupCheckFxn("ahoiOthers", ahoiOthersList), tags$p()
+                                 
+                                 ) # end of AHOI tab
                         
                         ), # end of tabset panel 
             
@@ -503,7 +533,7 @@ server <- function(input, output, session) {
                  "mm", "habs", "scfc", "geo", "ss", "msa1a", "msa3a", "nmca",
                  "tcc1a", "tcc2a", "rec", "bath", "buff", "study", "overlap", 
                  "ebsa", "shar", "sponge", "marten", "plover", "harp", "whale",
-                 "shore", "waste", "calanus")
+                 "shore", "waste", "calanus", "ahoiSpp", "ahoiPolys", "ahoiOthers")
     
     
     lapply(catList, FUN = function(i){
@@ -543,6 +573,9 @@ server <- function(input, output, session) {
 
       # #bath_csub <- bath_proj[bath_proj$ID %in% input$bathCheck, ]
       buff_csub <- buff_proj[buff_proj$Buffer_Dis %in% input$buffCheck, ]
+      
+      ahoiPolys_csub <- ahoiPolys_proj[ahoiPolys_proj$Colour %in% input$ahoiPolysCheck, ]
+      ahoiOthers_csub <- ahoiOthers_proj[ahoiOthers_proj$Legend %in% input$ahoiOthersCheck, ]
 
       # #rrd_csub <- rrd_proj[rrd_proj$Energy %in% input$rrdCheck, ]
       # 
@@ -643,7 +676,15 @@ server <- function(input, output, session) {
         # 
         addPolygons(data = buff_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     popup = ~paste("Distance from National Park Boundary: ",
-                                   buff_csub$Buffer_Dis, " km"))
+                                   buff_csub$Buffer_Dis, " km")) %>% 
+        
+        addPolygons(data = ahoiPolys_csub, weight = 1, color = "grey", smoothFactor = 0.5,
+                    fillColor = ahoiPolys_csub$Dashboard,
+                    popup = ~paste("Category: ", ahoiPolys_csub$Colour,
+                                   "No. of Participants: ", ahoiPolys_csub$parts)) %>% 
+        
+        addPolygons(data = ahoiOthers_csub, weight = 1, color = "grey", smoothFactor = 0.5,
+                    popup = ~paste("Species: ", ahoiOthers_csub$Legend))
 
 
 
@@ -690,6 +731,11 @@ server <- function(input, output, session) {
                          popup = ~paste("Category: ", overlap_csub$Category, "<br />",
                                         "Taxonomic Class: ", overlap_csub$Class, "<br />",
                                         "Common Name: ", overlap_csub$Common_Name))
+      
+      ahoiSpp_csub <- ahoiSpp_proj[ahoiSpp_proj$Legend %in% input$ahoiSppCheck, ]
+      prox %>% 
+        addCircleMarkers(data = ahoiSpp_csub, color = "grey", radius = 5,
+                         popup = ~paste("Species: ", ahoiSpp_csub$Legend))
 
     })
 
@@ -807,6 +853,9 @@ server <- function(input, output, session) {
       updateCheckboxGroupInput(session, "buffCheck", choices = buffList, selected = NULL)
       updateCheckboxGroupInput(session, "studyCheck", choices = studyList, selected = NULL)
       updateCheckboxGroupInput(session, "overlapCheck", choices = overlapList, selected = NULL)
+      updateCheckboxGroupInput(session, "ahoiSppCheck", choices = ahoiSppList, selected = NULL)
+      updateCheckboxGroupInput(session, "ahoiPolysCheck", choices = ahoiPolysList, selected = NULL)
+      updateCheckboxGroupInput(session, "ahoiOthersCheck", choices = ahoiOthersList, selected = NULL)
     })
 
 
