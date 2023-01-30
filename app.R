@@ -680,7 +680,7 @@ server <- function(input, output, session) {
         
         addPolygons(data = ahoiPolys_csub, weight = 1, color = "grey", smoothFactor = 0.5,
                     fillColor = ahoiPolys_csub$Dashboard,
-                    popup = ~paste("Category: ", ahoiPolys_csub$Colour,
+                    popup = ~paste("Category: ", ahoiPolys_csub$Colour, "<br/>",
                                    "No. of Participants: ", ahoiPolys_csub$parts)) %>% 
         
         addPolygons(data = ahoiOthers_csub, weight = 1, color = "grey", smoothFactor = 0.5,
