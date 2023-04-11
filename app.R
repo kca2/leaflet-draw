@@ -258,6 +258,10 @@ ahoiOthers <- read_sf(dsn = "./data", layer = "ahoi_other_polys")
 ahoiOthersList <- unique(ahoiOthers$Legend)
 ahoiOthers_proj <- st_transform(ahoiOthers, "+proj=longlat +datum=WGS84")
 
+m1 <- read_sf(dsn = "./data", layer = "updated_2022_M1")
+m1List <- unique(m1$MapFile)
+m1_proj <- st_transform(m1, "+proj=longlat +datum=WGS84")
+
 #---RRD
 # rrd <- readOGR("./data", layer = "RRD", GDAL1_integer64_policy = TRUE)
 # 
@@ -465,7 +469,13 @@ ui <- bootstrapPage(
                                  actionButton("ahoiOthersButton", label = "Species Polygons"),
                                  groupCheckFxn("ahoiOthers", ahoiOthersList), tags$p()
                                  
-                                 ) # end of AHOI tab
+                                 ), # end of AHOI tab
+                        tabPanel("M1 2022",
+                                 tags$hr(),
+                                 actionButton("m1Button", label = "2022 Meeting 1 Polygons"),
+                                 groupCheckFxn("m1", m1List), tags$p()
+                          
+                        ) # end of M1 2022
                         
                         ), # end of tabset panel 
             
@@ -533,7 +543,8 @@ server <- function(input, output, session) {
                  "mm", "habs", "scfc", "geo", "ss", "msa1a", "msa3a", "nmca",
                  "tcc1a", "tcc2a", "rec", "bath", "buff", "study", "overlap", 
                  "ebsa", "shar", "sponge", "marten", "plover", "harp", "whale",
-                 "shore", "waste", "calanus", "ahoiSpp", "ahoiPolys", "ahoiOthers")
+                 "shore", "waste", "calanus", "ahoiSpp", "ahoiPolys", "ahoiOthers",
+                 "m1")
     
     
     lapply(catList, FUN = function(i){
@@ -576,6 +587,8 @@ server <- function(input, output, session) {
       
       ahoiPolys_csub <- ahoiPolys_proj[ahoiPolys_proj$Colour %in% input$ahoiPolysCheck, ]
       ahoiOthers_csub <- ahoiOthers_proj[ahoiOthers_proj$Legend %in% input$ahoiOthersCheck, ]
+      
+      m1_csub <- m1_proj[m1_proj$MapFile %in% input$m1Check, ]
 
       # #rrd_csub <- rrd_proj[rrd_proj$Energy %in% input$rrdCheck, ]
       # 
@@ -684,7 +697,10 @@ server <- function(input, output, session) {
                                    "No. of Participants: ", ahoiPolys_csub$parts)) %>% 
         
         addPolygons(data = ahoiOthers_csub, weight = 1, color = "grey", smoothFactor = 0.5,
-                    popup = ~paste("Species: ", ahoiOthers_csub$Legend))
+                    popup = ~paste("Species: ", ahoiOthers_csub$Legend)) %>% 
+        
+        addPolygons(data = m1_csub, weight = 1, color = "grey", smoothFactor = 0.5,
+                    popup = ~paste("File Name: ", m1_csub$MapFile))
 
 
 
@@ -856,6 +872,7 @@ server <- function(input, output, session) {
       updateCheckboxGroupInput(session, "ahoiSppCheck", choices = ahoiSppList, selected = NULL)
       updateCheckboxGroupInput(session, "ahoiPolysCheck", choices = ahoiPolysList, selected = NULL)
       updateCheckboxGroupInput(session, "ahoiOthersCheck", choices = ahoiOthersList, selected = NULL)
+      updateCheckboxGroupInput(session, "m1Check", choices = m1List, selected = NULL)
     })
 
 
