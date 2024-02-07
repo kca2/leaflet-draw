@@ -2,10 +2,10 @@
 # download libraries
 ###############
 dep01 <- list.files("./libs/dep01", recursive = F, full.names = T)
-lapply(dep01, function(i){install.packages(i, repos = FULL)})
+lapply(dep01, function(i){install.packages(i, repos = NULL)})
 
 dep02 <- list.files("./libs/dep02", recursive = F, full.names = T)
-lapply(dep_files, function(i){install.packages(i, repos = NULL)})
+lapply(dep02, function(i){install.packages(i, repos = NULL)})
 
 pkgs <- list.files("./libs/pkgs", recursive = F, full.names = T)
 lapply(pkgs, function(i){install.packages(i, repos = NULL)})
