@@ -262,6 +262,25 @@ m1 <- read_sf(dsn = "./data", layer = "updated_2022_M1")
 m1List <- unique(m1$MapFile)
 m1_proj <- st_transform(m1, "+proj=longlat +datum=WGS84")
 
+#---mgmt
+gmz_file <- "./data/mgmt/tif/gmz.tif"
+gmz <- raster(gmz_file)
+gPal <- colorFactor(c("#000000", "#000000", "#808080", "#808080",
+                      "#FFFFFF", "#FFFFFF","#FFFFFF","#FFFFFF","#FFFFFF","#FFFFFF","#FFFFFF"),
+                    values(gmz), levels = c(1,2,3,4,5,6,7,8,9,10,11), na.color = "transparent")
+
+high_file <- "./data/mgmt/tif/pmz_high.tif"
+pmz_high <- raster(high_file)
+hPal <- colorFactor(c("#0C2C84","#0C2C84", "#41B6C4", "#41B6C4", "#797EF6","#797EF6","#797EF6","#797EF6","#797EF6"), 
+                    values(pmz_high), levels = c(1,2,3,4,5,6,7,8,9), na.color = "transparent")
+
+ml_file <- "./data/mgmt/tif/pmz_ml.tif"
+pmz_ml <- raster(ml_file)
+mPal <- colorFactor(c("#CCCC84", "#CCCC84", "#408E7F", "#408E7F", "#13404A", "#13404A", "#13404A"),
+                    values(pmz_ml), levels = c(1,2,3,4,5,6,7), na.color = "transparent")
+
+
+
 #---RRD
 # rrd <- readOGR("./data", layer = "RRD", GDAL1_integer64_policy = TRUE)
 # 
@@ -475,7 +494,19 @@ ui <- bootstrapPage(
                                  actionButton("m1Button", label = "2022 Meeting 1 Polygons"),
                                  groupCheckFxn("m1", m1List), tags$p()
                           
-                        ) # end of M1 2022
+                                ), # end of M1 2022
+                        tabPanel("Mgmt.",
+                                 tags$hr(),
+                                 actionButton("gmzButton", label = "GMZ"),
+                                 checkFxn("gmz", "GMZ"), tags$p(),
+                                 
+                                 actionButton("pmzHighButton", label = "PMZ High"),
+                                 checkFxn("pmzHigh", "High"), tags$p(),
+                                 
+                                 actionButton("pmzMLButton", label = "PMZ Med-Low"),
+                                 checkFxn("pmzML", "Med-Low")
+                                 
+                                 ) # end mgmt 
                         
                         ), # end of tabset panel 
             
@@ -544,7 +575,7 @@ server <- function(input, output, session) {
                  "tcc1a", "tcc2a", "rec", "bath", "buff", "study", "overlap", 
                  "ebsa", "shar", "sponge", "marten", "plover", "harp", "whale",
                  "shore", "waste", "calanus", "ahoiSpp", "ahoiPolys", "ahoiOthers",
-                 "m1")
+                 "m1", "gmz", "pmzHigh", "pmzML")
     
     
     lapply(catList, FUN = function(i){
@@ -831,6 +862,32 @@ server <- function(input, output, session) {
       }
       
       
+    })
+    
+    # allow users to turn gmz 
+    observe({
+      prox <- leafletProxy("map")
+      prox %>% clearImages() %>% clearControls()
+      if(input$gmzCheck){
+        prox %>%
+          addRasterImage(x = gmz, opacity = 0.5, colors = gPal)
+      }
+      
+      # if(input$pmzHighCheck){
+      #   prox %>% 
+      #     addRasterImage(x = pmz_high, opacity = 0.5, colors = hPal) %>% 
+      #     addLegend(pal = hPal, values = values(pmz_high), title = "Categories")
+      # }
+      
+      if(input$pmzHighCheck){
+        prox %>%
+          addRasterImage(x = pmz_high, opacity = 0.5, colors = hPal)
+      }
+      
+      if(input$pmzMLCheck){
+        prox %>% 
+          addRasterImage(x = pmz_ml, opacity = 0.5, colors = mPal)
+      }
     })
     
     # allow users to clear all layers displayed
