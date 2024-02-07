@@ -19,7 +19,7 @@ library(leaflet.extras)
 library(tidyverse)
 library(sf) # read in SHP & reproject to WGS 84
 library(shinyjs)
-library(marmap) # get bathymetry data
+#library(marmap) # get bathymetry data
 library(raster) # display bathymetry as raster
 library(leaflet.esri) # esri REST
 
@@ -212,25 +212,25 @@ buffList <- unique(buff_proj$Buffer_Dis)
 # gmBath <- getNOAA.bathy(lon1 = -60.5, lon2 = -51, lat1 = 46, lat2 = 52.13, resolution = 1,
 #                         keep = T, path = "./data")
 
-gmBath <- read.bathy("./data/marmap_coord_-60.5;46;-51;52.13_res_1.csv", header = T)
-
-gmRast <- marmap::as.raster(gmBath)
-
-# nfld <- readOGR("./data", layer = "select_divs", GDAL1_integer64_policy = TRUE)
-# nfld_proj <-  spTransform(nfld, "+proj=longlat +datum=WGS84")
-
-nfld <- read_sf(dsn = "./data", layer = "select_divs")
-nfld_proj <- st_transform(nfld, "+proj=longlat +datum=WGS84")
-
-# remove land 
-gmMask <- mask(gmRast, nfld_proj)
-gmMask[gmMask@data@values > 0] <- NA
-
-# remove all elevations above sea level
-# gmMask <- marmap::as.raster(gmBath)
+# gmBath <- read.bathy("./data/marmap_coord_-60.5;46;-51;52.13_res_1.csv", header = T)
+# 
+# gmRast <- marmap::as.raster(gmBath)
+# 
+# # nfld <- readOGR("./data", layer = "select_divs", GDAL1_integer64_policy = TRUE)
+# # nfld_proj <-  spTransform(nfld, "+proj=longlat +datum=WGS84")
+# 
+# nfld <- read_sf(dsn = "./data", layer = "select_divs")
+# nfld_proj <- st_transform(nfld, "+proj=longlat +datum=WGS84")
+# 
+# # remove land 
+# gmMask <- mask(gmRast, nfld_proj)
 # gmMask[gmMask@data@values > 0] <- NA
-
-bPal <- colorNumeric(c("#0C2C84", "#41B6C4", "#FFFFCC"), values(gmMask), na.color = "transparent")
+# 
+# # remove all elevations above sea level
+# # gmMask <- marmap::as.raster(gmBath)
+# # gmMask[gmMask@data@values > 0] <- NA
+# 
+# bPal <- colorNumeric(c("#0C2C84", "#41B6C4", "#FFFFCC"), values(gmMask), na.color = "transparent")
 
 #bPal <- colorNumeric(c("#06114f", "#710096", "#ffffcc"), values(gmMask), na.color = "transparent")
 
@@ -798,16 +798,16 @@ server <- function(input, output, session) {
 
     })
 
-    # allow users to turn bathymetry on/off
-    observe({
-      prox <- leafletProxy("map")
-      prox %>% clearImages() %>% clearControls()
-      if(input$bathCheck){
-        prox %>%
-          addRasterImage(gmMask, opacity = 0.4, colors = bPal) %>%
-          addLegend(pal = bPal, values = values(gmMask), title = "Depth (m)")
-        }
-    })
+    # # allow users to turn bathymetry on/off
+    # observe({
+    #   prox <- leafletProxy("map")
+    #   prox %>% clearImages() %>% clearControls()
+    #   if(input$bathCheck){
+    #     prox %>%
+    #       addRasterImage(gmMask, opacity = 0.4, colors = bPal) %>%
+    #       addLegend(pal = bPal, values = values(gmMask), title = "Depth (m)")
+    #     }
+    # })
     
     # allow users to turn gov. layers on/off
     observe({
