@@ -1,11 +1,14 @@
 ###############
 # download libraries
 ###############
-dep_files <- list.files("./libs/dep", recursive = F, full.names = T)
+dep01 <- list.files("./libs/dep01", recursive = F, full.names = T)
+lapply(dep01, function(i){install.packages(i, repos = FULL)})
+
+dep02 <- list.files("./libs/dep02", recursive = F, full.names = T)
 lapply(dep_files, function(i){install.packages(i, repos = NULL)})
 
-libs_files <- list.files("./libs/pkgs", recursive = F, full.names = T)
-lapply(libs_files, function(i){install.packages(i, repos = NULL)})
+pkgs <- list.files("./libs/pkgs", recursive = F, full.names = T)
+lapply(pkgs, function(i){install.packages(i, repos = NULL)})
 
 ###############
 # load libraries
